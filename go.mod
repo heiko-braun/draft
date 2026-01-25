@@ -1,4 +1,4 @@
-module github.com/h010198/claude-spec-driven
+module github.com/heiko-braun/claude-spec-driven
 
 go 1.24.3
 

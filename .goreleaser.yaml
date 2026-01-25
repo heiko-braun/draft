@@ -72,7 +72,7 @@ changelog:
 
 release:
   github:
-    owner: h010198
+    owner: heiko-braun
     name: claude-spec-driven
   draft: false
   prerelease: auto
