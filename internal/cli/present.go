@@ -21,6 +21,7 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
+	"gopkg.in/yaml.v3"
 )
 
 func newPresentCmd() *cobra.Command {
@@ -47,9 +48,20 @@ Example:
 }
 
 type specInfo struct {
-	Name     string
-	Path     string
-	Modified string
+	Name        string
+	Path        string
+	Modified    string
+	Title       string
+	Description string
+	Status      string
+	Author      string
+}
+
+type frontMatter struct {
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+	Status      string `yaml:"status"`
+	Author      string `yaml:"author"`
 }
 
 func serveSpecs(port int) error {
@@ -125,6 +137,9 @@ func handleSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Strip frontmatter before rendering
+	content = stripFrontMatter(content)
+
 	htmlContent, toc, err := renderMarkdown(content)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error rendering markdown: %v", err), http.StatusInternalServerError)
@@ -198,16 +213,76 @@ func getSpecList() ([]specInfo, error) {
 			}
 			modTime := info.ModTime().Format("2006-01-02")
 
+			// Parse frontmatter
+			fm, err := parseFrontMatter(path)
+			if err != nil {
+				// If frontmatter parsing fails, still include the spec with basic info
+				log.Printf("Warning: failed to parse frontmatter for %s: %v", path, err)
+			}
+
+			// Extract author name only (remove email)
+			authorName := fm.Author
+			if idx := strings.Index(authorName, "<"); idx > 0 {
+				authorName = strings.TrimSpace(authorName[:idx])
+			}
+
 			specs = append(specs, specInfo{
-				Name:     name,
-				Path:     "/spec/" + name,
-				Modified: modTime,
+				Name:        name,
+				Path:        "/spec/" + name,
+				Modified:    modTime,
+				Title:       fm.Title,
+				Description: fm.Description,
+				Status:      fm.Status,
+				Author:      authorName,
 			})
 		}
 		return nil
 	})
 
 	return specs, err
+}
+
+func parseFrontMatter(filePath string) (frontMatter, error) {
+	var fm frontMatter
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fm, err
+	}
+
+	// Check if file starts with YAML frontmatter
+	if !bytes.HasPrefix(content, []byte("---\n")) {
+		return fm, nil // No frontmatter, return empty struct
+	}
+
+	// Find the closing ---
+	parts := bytes.SplitN(content[4:], []byte("\n---\n"), 2)
+	if len(parts) < 2 {
+		return fm, nil // Invalid frontmatter format
+	}
+
+	// Parse YAML
+	if err := yaml.Unmarshal(parts[0], &fm); err != nil {
+		return fm, err
+	}
+
+	return fm, nil
+}
+
+func stripFrontMatter(content []byte) []byte {
+	// Check if file starts with YAML frontmatter
+	if !bytes.HasPrefix(content, []byte("---\n")) {
+		return content // No frontmatter, return as is
+	}
+
+	// Find the closing ---
+	parts := bytes.SplitN(content[4:], []byte("\n---\n"), 2)
+	if len(parts) < 2 {
+		return content // Invalid frontmatter format, return as is
+	}
+
+	// Return content after frontmatter
+	return parts[1]
 }
 
 func renderMarkdown(source []byte) (string, string, error) {
@@ -384,17 +459,56 @@ const indexTemplate = `<!DOCTYPE html>
         td {
             padding: 0.75rem 1rem;
             font-size: 0.95rem;
+            vertical-align: top;
         }
         td a {
             color: hsl(240 10% 3.9%);
             text-decoration: none;
+            font-weight: 500;
         }
         td a:hover {
             text-decoration: underline;
         }
+        .spec-title {
+            margin-bottom: 0.25rem;
+        }
+        .spec-description {
+            font-size: 0.875rem;
+            color: hsl(240 3.8% 46.1%);
+            line-height: 1.4;
+        }
         .date {
             color: hsl(240 3.8% 46.1%);
             font-size: 0.875rem;
+        }
+        .author {
+            color: hsl(240 3.8% 46.1%);
+            font-size: 0.875rem;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 0.125rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .badge-proposed {
+            background: hsl(214.3 31.8% 91.4%);
+            color: hsl(222.2 47.4% 11.2%);
+            border-color: hsl(214.3 31.8% 91.4%);
+        }
+        .badge-implemented {
+            background: hsl(149 80% 90%);
+            color: hsl(140 70% 20%);
+            border-color: hsl(149 80% 90%);
+        }
+        .badge-default {
+            background: hsl(240 4.8% 95.9%);
+            color: hsl(240 10% 3.9%);
+            border-color: hsl(240 5.9% 90%);
         }
         .empty {
             color: hsl(240 3.8% 46.1%);
@@ -417,14 +531,29 @@ const indexTemplate = `<!DOCTYPE html>
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Last Modified</th>
+                    <th style="width: 40%;">Spec</th>
+                    <th style="width: 15%;">Status</th>
+                    <th style="width: 20%;">Author</th>
+                    <th style="width: 15%;">Last Modified</th>
                 </tr>
             </thead>
             <tbody>
             {{range .Specs}}
                 <tr>
-                    <td><a href="{{.Path}}">{{.Name}}</a></td>
+                    <td>
+                        <div class="spec-title">
+                            <a href="{{.Path}}">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</a>
+                        </div>
+                        {{if .Description}}
+                        <div class="spec-description">{{.Description}}</div>
+                        {{end}}
+                    </td>
+                    <td>
+                        {{if .Status}}
+                        <span class="badge badge-{{.Status}}">{{.Status}}</span>
+                        {{end}}
+                    </td>
+                    <td class="author">{{.Author}}</td>
                     <td class="date">{{.Modified}}</td>
                 </tr>
             {{end}}
