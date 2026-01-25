@@ -13,7 +13,7 @@ type LocalLoader struct {
 }
 
 // NewLocalLoader creates a LocalLoader for the given path.
-// The path should contain a .claude/ subdirectory.
+// The path should contain .claude/ and specs/ subdirectories.
 func NewLocalLoader(path string) *LocalLoader {
 	return &LocalLoader{path: path}
 }
@@ -44,9 +44,9 @@ func (l *LocalLoader) Load() (fs.FS, error) {
 		return nil, fmt.Errorf("DRAFT_TEMPLATES missing .claude/commands/ subdirectory: %s", l.path)
 	}
 
-	specsDir := filepath.Join(claudeDir, "specs")
+	specsDir := filepath.Join(l.path, "specs")
 	if err := validateDirectory(specsDir); err != nil {
-		return nil, fmt.Errorf("DRAFT_TEMPLATES missing .claude/specs/ subdirectory: %s", l.path)
+		return nil, fmt.Errorf("DRAFT_TEMPLATES missing specs/ subdirectory: %s", l.path)
 	}
 
 	// Return the OS filesystem rooted at the provided path

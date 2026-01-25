@@ -172,7 +172,7 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 			".claude/commands/spec.md",
 			".claude/commands/implement.md",
 			".claude/commands/refine.md",
-			".claude/specs/TEMPLATE.md",
+			"specs/TEMPLATE.md",
 		}
 
 		allowed := false
@@ -202,7 +202,7 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 	}
 
 	if len(memFS.files) == 0 {
-		return nil, fmt.Errorf("no .claude/ directory found in release tarball")
+		return nil, fmt.Errorf("no template files found in release tarball")
 	}
 
 	return memFS, nil

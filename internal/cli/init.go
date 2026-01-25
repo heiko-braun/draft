@@ -87,7 +87,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	total := filesCreated + len(filesOverwritten)
-	fmt.Printf("Successfully created %d files in .claude/\n", total)
+	fmt.Printf("Successfully created %d files in .claude/ and specs/\n", total)
 
 	return nil
 }
@@ -163,7 +163,7 @@ func findConflicts(targetDir string) ([]string, error) {
 		".claude/commands/spec.md",
 		".claude/commands/implement.md",
 		".claude/commands/refine.md",
-		".claude/specs/TEMPLATE.md",
+		"specs/TEMPLATE.md",
 	}
 
 	for _, file := range filesToCheck {
@@ -180,48 +180,55 @@ func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS) (int
 	filesCreated := 0
 	var filesOverwritten []string
 
-	// Walk the filesystem starting at .claude
-	err := fs.WalkDir(templatesFS, ".claude", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
+	// Walk the filesystem for both .claude and specs directories
+	roots := []string{".claude", "specs"}
 
-		// Skip the root directory
-		if path == ".claude" {
+	for _, root := range roots {
+		err := fs.WalkDir(templatesFS, root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// Skip the root directory
+			if path == root {
+				return nil
+			}
+
+			// Calculate target path
+			targetPath := filepath.Join(targetDir, path)
+
+			if d.IsDir() {
+				// Create directory
+				return os.MkdirAll(targetPath, 0755)
+			}
+
+			// Read file from FS
+			content, err := fs.ReadFile(templatesFS, path)
+			if err != nil {
+				return fmt.Errorf("failed to read file %s: %w", path, err)
+			}
+
+			// Check if file exists
+			_, err = os.Stat(targetPath)
+			fileExists := err == nil
+
+			// Write file
+			if err := os.WriteFile(targetPath, content, 0644); err != nil {
+				return fmt.Errorf("failed to write file %s: %w", targetPath, err)
+			}
+
+			if fileExists && forceFlag {
+				filesOverwritten = append(filesOverwritten, path)
+			} else {
+				filesCreated++
+			}
+
 			return nil
-		}
-
-		// Calculate target path
-		targetPath := filepath.Join(targetDir, path)
-
-		if d.IsDir() {
-			// Create directory
-			return os.MkdirAll(targetPath, 0755)
-		}
-
-		// Read file from FS
-		content, err := fs.ReadFile(templatesFS, path)
+		})
 		if err != nil {
-			return fmt.Errorf("failed to read file %s: %w", path, err)
+			return filesCreated, filesOverwritten, err
 		}
+	}
 
-		// Check if file exists
-		_, err = os.Stat(targetPath)
-		fileExists := err == nil
-
-		// Write file
-		if err := os.WriteFile(targetPath, content, 0644); err != nil {
-			return fmt.Errorf("failed to write file %s: %w", targetPath, err)
-		}
-
-		if fileExists && forceFlag {
-			filesOverwritten = append(filesOverwritten, path)
-		} else {
-			filesCreated++
-		}
-
-		return nil
-	})
-
-	return filesCreated, filesOverwritten, err
+	return filesCreated, filesOverwritten, nil
 }

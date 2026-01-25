@@ -3,8 +3,9 @@ bin/
 /claudespec
 /draft
 
-# Build artifacts (templates synced from .claude/)
+# Build artifacts (templates synced from .claude/ and specs/)
 cmd/draft/templates/.claude/
+cmd/draft/templates/specs/
 
 # Go build artifacts
 *.exe
