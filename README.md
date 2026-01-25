@@ -17,10 +17,11 @@ This framework adds a **specification phase** before implementation, ensuring al
 
 ```mermaid
 flowchart TD
-    A["/plan {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
+    A["/spec {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
     B --> C["2. SPEC Document<br/>Write lightweight spec to<br/>.claude/specs/{feature}.md"]
     C --> D["3. CONFIRM Approval<br/>Get explicit user approval<br/>before any implementation"]
-    D --> E["4. IMPLEMENT with Checkpoints<br/>Build in phases with<br/>user checkpoints between each"]
+    D --> E["/implement {feature}"]
+    E --> F["4. BUILD with Checkpoints<br/>Build in phases with<br/>user checkpoints between each"]
 ```
 
 ## Installation
@@ -89,13 +90,21 @@ If files already exist, the CLI will warn you and exit. Use `--force` to overwri
 ### Start a Feature
 
 ```
-/plan Add user authentication with OAuth support
+/spec Add user authentication with OAuth support
 ```
 
 Claude will:
 1. Ask clarifying questions one at a time
-2. Draft a spec based on your answers
-3. Ask for confirmation before implementing
+2. Create a spec in `.claude/specs/` based on your answers
+3. Ask for confirmation
+
+Once confirmed, implement it:
+
+```
+/implement authentication
+```
+
+This loads the spec and builds in phases with checkpoints between each.
 
 ### Spec Format
 
@@ -136,10 +145,9 @@ After each phase, Claude pauses for your approval before continuing.
 ```
 .claude/                           # SOURCE OF TRUTH - edit files here
 ├── commands/
-│   ├── plan.md                    # Entry point for /plan command
 │   ├── spec.md                    # Specification creation
-│   ├── refine.md                  # Refine existing specs
-│   └── implement.md               # Implementation with checkpoints
+│   ├── implement.md               # Implementation with checkpoints
+│   └── refine.md                  # Refine existing specs
 └── specs/
     ├── TEMPLATE.md                # Spec template reference
     └── {feature}.md               # Generated specs
@@ -151,53 +159,59 @@ cmd/draft/templates/.claude/       # Build artifacts (git-ignored, auto-synced)
 
 ## Commands Reference
 
-### `/plan` Command
-
-Entry point for spec-driven development. Asks clarifying questions, creates a spec, then implements after approval.
-
 ### `/spec` Command
 
-- Asks 3-5 clarifying questions (one at a time)
-- Creates spec in `.claude/specs/{feature}.md`
-- Requires explicit confirmation before proceeding
+Creates a specification through a question-driven process.
 
-**When to use:**
-- Features involving multiple files
-- Architectural decisions
-- User-facing changes
-- External integrations
+**Process:**
+1. Asks 3-5 clarifying questions (one at a time)
+2. Creates spec in `.claude/specs/{feature}.md`
+3. Presents spec for your review and confirmation
 
-**When to skip:**
-- Simple bug fixes
-- Single-line changes
-- Documentation updates
+**Use when:**
+- Features involving multiple files or architectural decisions
+- User-facing changes or external integrations
+- Non-trivial features that benefit from planning
 
-### `/refine` Command
-
-- Loads existing spec from `.claude/specs/`
-- Asks 2-3 focused refinement questions
-- Updates spec in place while preserving progress
-- Shows diff summary of changes
-- Documents refinements with timestamps in Notes section
-
-**When to use:**
-- Spec needs updates based on feedback
-- Requirements have changed slightly
-- Implementation revealed new edge cases
-- Need to adjust approach or criteria
-
-**When to create new spec:**
-- Major scope changes
-- Completely different approach needed
-- New feature that builds on existing one
+**Skip when:**
+- Simple bug fixes with obvious solutions
+- Single-line changes or documentation updates
 
 ### `/implement` Command
 
-- Loads confirmed spec from `.claude/specs/`
-- Breaks work into phases using TodoWrite
-- Implements with checkpoint pauses
-- Verifies against acceptance criteria
-- Updates spec with completion status
+Implements a feature from an existing specification with phased checkpoints.
+
+**Process:**
+1. Loads spec from `.claude/specs/{feature}.md`
+2. Breaks work into logical phases (foundation, core logic, integration, polish, verification)
+3. After each phase, pauses for your approval before continuing
+4. Verifies against acceptance criteria when complete
+5. Updates spec to mark completed criteria
+
+**Use when:**
+- A spec has been created and confirmed with `/spec`
+- Resuming interrupted implementation
+- User explicitly says "implement {feature}"
+
+### `/refine` Command
+
+Updates an existing specification while preserving progress.
+
+**Process:**
+1. Loads existing spec from `.claude/specs/`
+2. Asks 2-3 focused refinement questions
+3. Updates spec in place (preserves completed checkboxes)
+4. Shows diff summary and asks for confirmation
+5. Documents changes with timestamp in Notes section
+
+**Use when:**
+- Spec needs updates based on feedback
+- Requirements have changed slightly
+- Implementation revealed new edge cases
+
+**Create new spec instead when:**
+- Scope is expanding significantly
+- Core goals have completely changed
 
 ## Benefits
 

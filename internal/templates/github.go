@@ -171,7 +171,6 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 		allowedFiles := []string{
 			".claude/commands/spec.md",
 			".claude/commands/implement.md",
-			".claude/commands/plan.md",
 			".claude/commands/refine.md",
 			".claude/specs/TEMPLATE.md",
 		}

@@ -162,7 +162,6 @@ func findConflicts(targetDir string) ([]string, error) {
 	filesToCheck := []string{
 		".claude/commands/spec.md",
 		".claude/commands/implement.md",
-		".claude/commands/plan.md",
 		".claude/commands/refine.md",
 		".claude/specs/TEMPLATE.md",
 	}
