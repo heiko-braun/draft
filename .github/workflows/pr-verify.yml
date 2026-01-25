@@ -36,7 +36,7 @@ jobs:
         run: go vet ./...
 
       - name: Build CLI
-        run: go build -o bin/claudespec ./cmd/claudespec
+        run: go build -o bin/draft ./cmd/draft
 
       - name: Run tests (if any)
         run: go test -v ./...

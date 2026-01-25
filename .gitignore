@@ -1,6 +1,7 @@
 # Binaries
 bin/
 /claudespec
+/draft
 
 # Go build artifacts
 *.exe

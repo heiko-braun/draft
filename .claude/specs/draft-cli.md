@@ -1,14 +1,14 @@
-# Feature: claudespec CLI Tool
+# Feature: draft CLI Tool
 
 ## Goal
 
-Create a Go-based CLI tool that bootstraps the Claude spec-driven development workflow into any Git repository (greenfield or brownfield) by copying the `.claude/` directory structure and files from this repository.
+Create a Go-based CLI tool that bootstraps the specification-driven development workflow into any Git repository (greenfield or brownfield) by copying the `.claude/` directory structure and files from this repository.
 
 ## Acceptance Criteria
 
-- [x] CLI binary named `claudespec` can be built for macOS (amd64/arm64)
+- [x] CLI binary named `draft` can be built for macOS (amd64/arm64)
 - [x] Users can install via `go install` or download pre-built binaries from GitHub releases
-- [x] Running `claudespec init` in a target directory creates `.claude/commands/` and `.claude/specs/` directories
+- [x] Running `draft init` in a target directory creates `.claude/commands/` and `.claude/specs/` directories
 - [x] All files are copied: `spec.md`, `implement.md`, `plan.md` commands and `TEMPLATE.md` spec template
 - [x] When files already exist, CLI warns and stops without making changes
 - [x] `--force` flag overwrites existing files and logs what was overwritten
@@ -41,6 +41,6 @@ Use GoReleaser with GitHub Actions to build binaries for macOS (amd64/arm64) and
 
 ## Notes
 
-The CLI will be located in this repository under `cmd/claudespec/`. The embedded files will be sourced from `.claude/` directory at build time. Consider adding a simple README in the root explaining installation and usage.
+The CLI will be located in this repository under `cmd/draft/`. The embedded files will be sourced from `.claude/` directory at build time. Consider adding a simple README in the root explaining installation and usage.
 
 **Refinement 2026-01-25**: Updated approach to use GoReleaser for build and release automation instead of custom GitHub Actions build scripts. This provides better release management, automatic checksum generation, and standardized binary packaging.

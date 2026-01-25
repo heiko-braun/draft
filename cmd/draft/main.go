@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/heiko-braun/claude-spec-driven/internal/cli"
+	"github.com/heiko-braun/draft/internal/cli"
 )
 
 //go:embed templates/.claude

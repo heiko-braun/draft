@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install git hooks for claudespec development
+# Install git hooks for draft development
 
 set -e
 

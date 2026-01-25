@@ -6,14 +6,14 @@ Decouple the CLI from hardcoded template files by fetching `.claude/` templates 
 
 ## Acceptance Criteria
 
-- [x] By default, `claudespec init` fetches templates from the latest GitHub release of `heiko-braun/claude-spec-driven`
+- [x] By default, `draft init` fetches templates from the latest GitHub release of `heiko-braun/draft`
 - [x] Users can specify a version with `--version v1.2.0` to fetch templates from a specific release tag
-- [x] Users can set `CLAUDESPEC_TEMPLATES=/local/path` environment variable to use local files instead of fetching from GitHub
+- [x] Users can set `DRAFT_TEMPLATES=/local/path` environment variable to use local files instead of fetching from GitHub
 - [x] When environment variable is set, CLI validates the directory contains `.claude/commands/` and `.claude/specs/` subdirectories
 - [x] If validation fails, CLI exits with clear error message indicating what's missing
 - [x] When environment variable is set and validated, GitHub fetching is completely skipped
 - [x] When GitHub is unreachable or request fails, CLI falls back to embedded templates
-- [x] Embedded templates are kept minimal (same files as currently in `cmd/claudespec/templates/.claude/`)
+- [x] Embedded templates are kept minimal (same files as currently in `cmd/draft/templates/.claude/`)
 - [x] CLI displays clear messaging about template source (GitHub release/version, local path, or fallback)
 - [x] GitHub requests have reasonable timeout (e.g., 10 seconds)
 - [x] No caching of downloaded templates between runs
@@ -22,11 +22,11 @@ Decouple the CLI from hardcoded template files by fetching `.claude/` templates 
 
 Create a template loader abstraction in `internal/templates/` with three strategies:
 1. **GitHubLoader**: Fetches from GitHub releases API, downloads archive, extracts `.claude/` directory
-2. **LocalLoader**: Reads from filesystem path from `CLAUDESPEC_TEMPLATES` environment variable
+2. **LocalLoader**: Reads from filesystem path from `DRAFT_TEMPLATES` environment variable
 3. **EmbeddedLoader**: Falls back to `embed.FS` templates bundled in binary
 
 The `init` command will:
-1. Check if `CLAUDESPEC_TEMPLATES` env var is set → use LocalLoader
+1. Check if `DRAFT_TEMPLATES` env var is set → use LocalLoader
 2. Otherwise, attempt GitHubLoader (with `--version` if specified, else latest release)
 3. On GitHub failure (network error, timeout, 404), fall back to EmbeddedLoader
 4. Pass resolved templates to existing init logic
@@ -37,7 +37,7 @@ Use GitHub's releases API (`GET /repos/h010198/claude-spec-driven/releases/lates
 
 - Caching downloaded templates between runs
 - `--templates` flag for local path (use environment variable instead)
-- Conventional template location (e.g., `~/.claudespec/templates/`)
+- Conventional template location (e.g., `~/.draft/templates/`)
 - Merging local and remote templates (local completely replaces remote)
 - Interactive template selection or customization during init
 - Template validation or schema checking
@@ -48,9 +48,9 @@ Use GitHub's releases API (`GET /repos/h010198/claude-spec-driven/releases/lates
 
 The embedded templates serve as a safety fallback and ensure the CLI works offline. They should be synced with the repository's `.claude/` directory before each release.
 
-The `CLAUDESPEC_TEMPLATES` environment variable should point to a directory containing a `.claude/` subdirectory with the standard structure:
+The `DRAFT_TEMPLATES` environment variable should point to a directory containing a `.claude/` subdirectory with the standard structure:
 ```
-$CLAUDESPEC_TEMPLATES/
+$DRAFT_TEMPLATES/
   .claude/
     commands/
       spec.md

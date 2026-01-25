@@ -6,10 +6,10 @@ DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
 build:
-	go build $(LDFLAGS) -o bin/claudespec ./cmd/claudespec
+	go build $(LDFLAGS) -o bin/draft ./cmd/draft
 
 install:
-	go install $(LDFLAGS) ./cmd/claudespec
+	go install $(LDFLAGS) ./cmd/draft
 
 clean:
 	rm -rf bin/
@@ -27,4 +27,4 @@ install-hooks:
 	./scripts/install-git-hooks.sh
 
 run:
-	go run $(LDFLAGS) ./cmd/claudespec $(ARGS)
+	go run $(LDFLAGS) ./cmd/draft $(ARGS)

@@ -1,6 +1,8 @@
-# Claude Spec-Driven Development
+# Draft
 
-A lightweight framework for spec-driven development with Claude Code. Define requirements clearly, get explicit confirmation, then implement with checkpoints.
+**Draft your specs before you code** - a specification-driven development workflow for AI assistants.
+
+A lightweight framework for spec-driven development with Claude Code and other AI coding assistants. Define requirements clearly, get explicit confirmation, then implement with checkpoints.
 
 ## Why Spec-Driven?
 
@@ -28,30 +30,30 @@ flowchart TD
 Install via Go:
 
 ```bash
-go install github.com/heiko-braun/claude-spec-driven/cmd/claudespec@latest
+go install github.com/heiko-braun/draft/cmd/draft@latest
 ```
 
-Or download pre-built binaries from the [releases page](https://github.com/heiko-braun/claude-spec-driven/releases):
+Or download pre-built binaries from the [releases page](https://github.com/heiko-braun/draft/releases):
 
 **macOS (Intel):**
 ```bash
-curl -L https://github.com/heiko-braun/claude-spec-driven/releases/latest/download/claudespec-darwin-amd64 -o claudespec
-chmod +x claudespec
-sudo mv claudespec /usr/local/bin/
+curl -L https://github.com/heiko-braun/draft/releases/latest/download/draft-darwin-amd64 -o draft
+chmod +x draft
+sudo mv draft /usr/local/bin/
 ```
 
 **macOS (Apple Silicon):**
 ```bash
-curl -L https://github.com/heiko-braun/claude-spec-driven/releases/latest/download/claudespec-darwin-arm64 -o claudespec
-chmod +x claudespec
-sudo mv claudespec /usr/local/bin/
+curl -L https://github.com/heiko-braun/draft/releases/latest/download/draft-darwin-arm64 -o draft
+chmod +x draft
+sudo mv draft /usr/local/bin/
 ```
 
 Then bootstrap your project:
 
 ```bash
 cd /path/to/your/project
-claudespec init
+draft init
 ```
 
 ### Manual Installation
@@ -66,20 +68,20 @@ cp -r .claude/ /path/to/your/project/
 
 ### CLI Tool
 
-The `claudespec` CLI helps you bootstrap the spec-driven workflow into any repository:
+The `draft` CLI helps you bootstrap the spec-driven workflow into any repository:
 
 ```bash
 # Initialize in current directory
-claudespec init
+draft init
 
 # Initialize in specific directory
-claudespec init /path/to/project
+draft init /path/to/project
 
 # Overwrite existing files
-claudespec init --force
+draft init --force
 
 # Check version
-claudespec --version
+draft --version
 ```
 
 If files already exist, the CLI will warn you and exit. Use `--force` to overwrite them.

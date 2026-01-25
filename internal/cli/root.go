@@ -16,9 +16,9 @@ func Execute(templates embed.FS, version string) error {
 	appVersion = version
 
 	rootCmd := &cobra.Command{
-		Use:     "claudespec",
-		Short:   "Bootstrap Claude spec-driven development workflow",
-		Long:    `claudespec helps you set up spec-driven development in any repository by copying the necessary Claude command files and templates.`,
+		Use:     "draft",
+		Short:   "Draft your specs before you code",
+		Long:    `draft helps you set up specification-driven development in any repository by copying the necessary command files and templates for AI coding assistants like Claude Code.`,
 		Version: appVersion,
 	}
 
