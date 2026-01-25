@@ -43,19 +43,66 @@ This framework adds a **specification phase** before implementation, ensuring al
 
 ## Installation
 
+### Using the CLI Tool (Recommended)
+
+Install via Go:
+
+```bash
+go install github.com/h010198/claude-spec-driven/cmd/claudespec@latest
+```
+
+Or download pre-built binaries from the [releases page](https://github.com/h010198/claude-spec-driven/releases):
+
+**macOS (Intel):**
+```bash
+curl -L https://github.com/h010198/claude-spec-driven/releases/latest/download/claudespec-darwin-amd64 -o claudespec
+chmod +x claudespec
+sudo mv claudespec /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+```bash
+curl -L https://github.com/h010198/claude-spec-driven/releases/latest/download/claudespec-darwin-arm64 -o claudespec
+chmod +x claudespec
+sudo mv claudespec /usr/local/bin/
+```
+
+Then bootstrap your project:
+
+```bash
+cd /path/to/your/project
+claudespec init
+```
+
+### Manual Installation
+
 Copy the `.claude/` directory to your project:
 
 ```bash
 cp -r .claude/ /path/to/your/project/
 ```
 
-Or clone and use as a template:
+## Usage
+
+### CLI Tool
+
+The `claudespec` CLI helps you bootstrap the spec-driven workflow into any repository:
 
 ```bash
-git clone https://github.com/your-org/claude-spec-driven.git
+# Initialize in current directory
+claudespec init
+
+# Initialize in specific directory
+claudespec init /path/to/project
+
+# Overwrite existing files
+claudespec init --force
+
+# Check version
+claudespec --version
 ```
 
-## Usage
+If files already exist, the CLI will warn you and exit. Use `--force` to overwrite them.
 
 ### Start a Feature
 
@@ -108,42 +155,59 @@ After each phase, Claude pauses for your approval before continuing.
 .claude/
 ├── commands/
 │   ├── plan.md                    # Entry point for /plan command
-│   └── skills/
-│       ├── spec/
-│       │   ├── SKILL.MD           # Specification skill definition
-│       │   └── TEMPLATE.md        # Spec file template
-│       └── implement/
-│           └── SKILL.md           # Implementation skill definition
-└── specs/                         # Generated specs live here
-    └── .gitkeep
+│   ├── spec.md                    # Specification creation
+│   ├── refine.md                  # Refine existing specs
+│   └── implement.md               # Implementation with checkpoints
+└── specs/
+    ├── TEMPLATE.md                # Spec template reference
+    └── {feature}.md               # Generated specs
 ```
 
-## Skills Reference
+## Commands Reference
 
 ### `/plan` Command
 
-Entry point for spec-driven development. Triggers the spec skill, then implementation after approval.
+Entry point for spec-driven development. Asks clarifying questions, creates a spec, then implements after approval.
 
-### `spec` Skill
+### `/spec` Command
 
 - Asks 3-5 clarifying questions (one at a time)
 - Creates spec in `.claude/specs/{feature}.md`
 - Requires explicit confirmation before proceeding
 
-**When it activates:**
+**When to use:**
 - Features involving multiple files
 - Architectural decisions
 - User-facing changes
 - External integrations
 
-**When it skips:**
+**When to skip:**
 - Simple bug fixes
 - Single-line changes
 - Documentation updates
 
-### `implement` Skill
+### `/refine` Command
 
-- Loads confirmed spec
+- Loads existing spec from `.claude/specs/`
+- Asks 2-3 focused refinement questions
+- Updates spec in place while preserving progress
+- Shows diff summary of changes
+- Documents refinements with timestamps in Notes section
+
+**When to use:**
+- Spec needs updates based on feedback
+- Requirements have changed slightly
+- Implementation revealed new edge cases
+- Need to adjust approach or criteria
+
+**When to create new spec:**
+- Major scope changes
+- Completely different approach needed
+- New feature that builds on existing one
+
+### `/implement` Command
+
+- Loads confirmed spec from `.claude/specs/`
 - Breaks work into phases using TodoWrite
 - Implements with checkpoint pauses
 - Verifies against acceptance criteria

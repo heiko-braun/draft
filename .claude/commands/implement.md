@@ -1,9 +1,3 @@
-
----
-
-## `.claude/skills/implement/SKILL.md`
-
-```markdown
 ---
 name: implement
 description: Implement features with phase checkpoints. Use after a spec exists in .claude/specs/ or when implementing a confirmed specification.

@@ -1,9 +1,3 @@
-
----
-
-## `.claude/commands/plan.md`
-
-```markdown
 ---
 description: Start spec-driven development for a feature
 ---
