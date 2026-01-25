@@ -342,9 +342,9 @@ type memDirEntry struct {
 	size  int64
 }
 
-func (de *memDirEntry) Name() string               { return de.name }
-func (de *memDirEntry) IsDir() bool                { return de.isDir }
-func (de *memDirEntry) Type() fs.FileMode          { return 0 }
+func (de *memDirEntry) Name() string      { return de.name }
+func (de *memDirEntry) IsDir() bool       { return de.isDir }
+func (de *memDirEntry) Type() fs.FileMode { return 0 }
 func (de *memDirEntry) Info() (fs.FileInfo, error) {
 	return &memFileInfo{name: de.name, size: de.size, isDir: de.isDir}, nil
 }
