@@ -35,6 +35,9 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      - name: Sync templates from source of truth
+        run: ./scripts/sync-templates.sh
+
       - name: Build CLI
         run: go build -o bin/draft ./cmd/draft
 
