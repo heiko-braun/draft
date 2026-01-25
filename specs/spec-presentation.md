@@ -1,3 +1,10 @@
+---
+title: Spec Presentation
+description: Web UI to browse and review specs as styled HTML with table of contents from localhost
+status: proposed
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: Spec Presentation
 
 ## Goal

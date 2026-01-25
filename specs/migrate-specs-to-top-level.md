@@ -1,3 +1,10 @@
+---
+title: Migrate Specs to Top-Level Directory
+description: Move specification files from .claude/specs/ to /specs/ for better discoverability
+status: proposed
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: Migrate Specs to Top-Level Directory
 
 ## Goal

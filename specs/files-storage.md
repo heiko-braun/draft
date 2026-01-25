@@ -1,3 +1,10 @@
+---
+title: Remote Template Loading from GitHub
+description: Fetch .claude/ templates from GitHub releases at runtime with local override support
+status: implemented
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: Remote Template Loading from GitHub
 
 ## Goal

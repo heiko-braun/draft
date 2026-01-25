@@ -5,6 +5,13 @@ Use this format when creating specification files.
 ## Format
 
 ```markdown
+---
+title: {Feature Name}
+description: {Brief one-line description}
+status: proposed
+author: {Name} <{email}>
+---
+
 # Feature: {name}
 
 ## Goal

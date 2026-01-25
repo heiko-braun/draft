@@ -1,3 +1,10 @@
+---
+title: draft CLI Tool
+description: Go-based CLI tool that bootstraps specification-driven development workflow into any Git repository
+status: implemented
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: draft CLI Tool
 
 ## Goal

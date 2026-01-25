@@ -1,3 +1,10 @@
+---
+title: Establish .claude/ as Source of Truth
+description: Make .claude/ directory the single source of truth for templates embedded in draft CLI binary
+status: implemented
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: Establish .claude/ as Source of Truth
 
 ## Goal
