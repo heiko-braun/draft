@@ -17,7 +17,7 @@ import (
 const (
 	githubAPITimeout = 10 * time.Second
 	defaultOwner     = "heiko-braun"
-	defaultRepo      = "claude-spec-driven"
+	defaultRepo      = "draft"
 )
 
 // GitHubLoader loads templates from a GitHub release
