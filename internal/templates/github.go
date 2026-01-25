@@ -167,8 +167,23 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 
 		relPath := parts[1] // Everything after the root directory
 
-		// Only extract .claude/ directory contents
-		if !strings.HasPrefix(relPath, ".claude/") {
+		// Only extract template files (not project-specific specs)
+		allowedFiles := []string{
+			".claude/commands/spec.md",
+			".claude/commands/implement.md",
+			".claude/commands/refine.md",
+			".claude/specs/TEMPLATE.md",
+		}
+
+		allowed := false
+		for _, allowedFile := range allowedFiles {
+			if relPath == allowedFile {
+				allowed = true
+				break
+			}
+		}
+
+		if !allowed {
 			continue
 		}
 

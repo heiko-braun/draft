@@ -55,7 +55,6 @@ $DRAFT_TEMPLATES/
     commands/
       spec.md
       implement.md
-      plan.md
       refine.md
     specs/
       TEMPLATE.md
