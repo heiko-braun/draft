@@ -38,7 +38,7 @@ Use the project's existing patterns and tech stack to inform your questions. Ref
 
 ### Phase 2: Draft Spec
 
-Write a brief spec to `.claude/specs/{feature-name}.md` using the template in TEMPLATE.md.
+Write a brief spec to `.claude/specs/{feature-name}.md` using the template in `.claude/specs/TEMPLATE.md`.
 
 Keep it concise:
 - Goal: 1-2 sentences
@@ -56,4 +56,4 @@ If the user wants changes, revise the spec and confirm again.
 
 ## Reference
 
-See TEMPLATE.md for the spec file format.
+See `.claude/specs/TEMPLATE.md` for the spec file format.
