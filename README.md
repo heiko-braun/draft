@@ -18,7 +18,7 @@ This framework adds a **specification phase** before implementation, ensuring al
 ```mermaid
 flowchart TD
     A["/spec {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
-    B --> C["2. SPEC Document<br/>Write lightweight spec to<br/>.claude/specs/{feature}.md"]
+    B --> C["2. SPEC Document<br/>Write lightweight spec to<br/>specs/{feature}.md"]
     C --> D["3. CONFIRM Approval<br/>Get explicit user approval<br/>before any implementation"]
     D --> E["/implement {feature}"]
     E --> F["4. BUILD with Checkpoints<br/>Build in phases with<br/>user checkpoints between each"]
@@ -95,7 +95,7 @@ If files already exist, the CLI will warn you and exit. Use `--force` to overwri
 
 Claude will:
 1. Ask clarifying questions one at a time
-2. Create a spec in `.claude/specs/` based on your answers
+2. Create a spec in `specs/` based on your answers
 3. Ask for confirmation
 
 Once confirmed, implement it:
@@ -108,7 +108,7 @@ This loads the spec and builds in phases with checkpoints between each.
 
 ### Spec Format
 
-Specs are stored in `.claude/specs/` with this structure:
+Specs are stored in `/specs/` with this structure:
 
 ```markdown
 # Feature: {name}
@@ -143,19 +143,22 @@ After each phase, Claude pauses for your approval before continuing.
 ## Project Structure
 
 ```
-.claude/                           # SOURCE OF TRUTH - edit files here
+.claude/                           # Workflow commands (SOURCE OF TRUTH)
 ├── commands/
 │   ├── spec.md                    # Specification creation
 │   ├── implement.md               # Implementation with checkpoints
 │   └── refine.md                  # Refine existing specs
-└── specs/
-    ├── TEMPLATE.md                # Spec template reference
-    └── {feature}.md               # Generated specs
 
-cmd/draft/templates/.claude/       # Build artifacts (git-ignored, auto-synced)
+specs/                             # Project specifications (SOURCE OF TRUTH)
+├── TEMPLATE.md                    # Spec template reference
+└── {feature}.md                   # Generated specs
+
+cmd/draft/templates/               # Build artifacts (git-ignored, auto-synced)
+├── .claude/
+└── specs/
 ```
 
-**Note:** The `.claude/` directory at the project root is the source of truth. Files in `cmd/draft/templates/.claude/` are automatically synced during builds and should never be edited directly.
+**Note:** The `.claude/` and `specs/` directories at the project root are the source of truth. Files in `cmd/draft/templates/` are automatically synced during builds and should never be edited directly.
 
 ## Commands Reference
 
@@ -165,7 +168,7 @@ Creates a specification through a question-driven process.
 
 **Process:**
 1. Asks 3-5 clarifying questions (one at a time)
-2. Creates spec in `.claude/specs/{feature}.md`
+2. Creates spec in `/specs/{feature}.md`
 3. Presents spec for your review and confirmation
 
 **Use when:**
@@ -182,7 +185,7 @@ Creates a specification through a question-driven process.
 Implements a feature from an existing specification with phased checkpoints.
 
 **Process:**
-1. Loads spec from `.claude/specs/{feature}.md`
+1. Loads spec from `/specs/{feature}.md`
 2. Breaks work into logical phases (foundation, core logic, integration, polish, verification)
 3. After each phase, pauses for your approval before continuing
 4. Verifies against acceptance criteria when complete
@@ -198,7 +201,7 @@ Implements a feature from an existing specification with phased checkpoints.
 Updates an existing specification while preserving progress.
 
 **Process:**
-1. Loads existing spec from `.claude/specs/`
+1. Loads existing spec from `/specs/`
 2. Asks 2-3 focused refinement questions
 3. Updates spec in place (preserves completed checkboxes)
 4. Shows diff summary and asks for confirmation
@@ -240,8 +243,8 @@ The build process automatically syncs templates from `.claude/` (source of truth
 
 ### Template Source of Truth
 
-- **Edit templates in**: `.claude/commands/*.md` and `.claude/specs/TEMPLATE.md`
-- **Never edit**: `cmd/draft/templates/.claude/` (auto-generated build artifacts)
+- **Edit templates in**: `.claude/commands/*.md` and `specs/TEMPLATE.md`
+- **Never edit**: `cmd/draft/templates/` (auto-generated build artifacts)
 - **Manual sync**: `make sync-templates` (automatic when running `make build` or `make install`)
 
 ## License

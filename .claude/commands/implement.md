@@ -18,7 +18,7 @@ You implement features methodically with user checkpoints between phases.
 
 ### 1. Load Spec
 
-Read the relevant `.claude/specs/{feature}.md` file. If multiple specs exist and it's unclear which one, ask the user.
+Read the relevant `/specs/{feature}.md` file. If multiple specs exist and it's unclear which one, ask the user.
 
 ### 2. Create Task Breakdown
 

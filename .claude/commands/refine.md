@@ -10,7 +10,7 @@ Refine an existing specification based on new insights, feedback, or changing re
 
 ## Instructions
 
-1. **Load the existing spec** from `.claude/specs/{feature}.md`
+1. **Load the existing spec** from `/specs/{feature}.md`
    - If no spec exists for this feature, suggest using `/spec` instead
    - If multiple specs match, ask the user which one to refine
 
