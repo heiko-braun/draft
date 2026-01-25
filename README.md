@@ -13,32 +13,12 @@ This framework adds a **specification phase** before implementation, ensuring al
 
 ## How It Works
 
-```
-/plan {feature description}
-    │
-    ▼
-┌─────────────────────────┐
-│   1. CLARIFY            │  Ask 3-5 questions (one at a time)
-│      Questions          │  to understand requirements
-└──────────┬──────────────┘
-           │
-           ▼
-┌─────────────────────────┐
-│   2. SPEC               │  Write lightweight spec to
-│      Document           │  .claude/specs/{feature}.md
-└──────────┬──────────────┘
-           │
-           ▼
-┌─────────────────────────┐
-│   3. CONFIRM            │  Get explicit user approval
-│      Approval           │  before any implementation
-└──────────┬──────────────┘
-           │
-           ▼
-┌─────────────────────────┐
-│   4. IMPLEMENT          │  Build in phases with
-│      with Checkpoints   │  user checkpoints between each
-└─────────────────────────┘
+```mermaid
+flowchart TD
+    A["/plan {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
+    B --> C["2. SPEC Document<br/>Write lightweight spec to<br/>.claude/specs/{feature}.md"]
+    C --> D["3. CONFIRM Approval<br/>Get explicit user approval<br/>before any implementation"]
+    D --> E["4. IMPLEMENT with Checkpoints<br/>Build in phases with<br/>user checkpoints between each"]
 ```
 
 ## Installation
@@ -48,21 +28,21 @@ This framework adds a **specification phase** before implementation, ensuring al
 Install via Go:
 
 ```bash
-go install github.com/h010198/claude-spec-driven/cmd/claudespec@latest
+go install github.com/heiko-braun/claude-spec-driven/cmd/claudespec@latest
 ```
 
-Or download pre-built binaries from the [releases page](https://github.com/h010198/claude-spec-driven/releases):
+Or download pre-built binaries from the [releases page](https://github.com/heiko-braun/claude-spec-driven/releases):
 
 **macOS (Intel):**
 ```bash
-curl -L https://github.com/h010198/claude-spec-driven/releases/latest/download/claudespec-darwin-amd64 -o claudespec
+curl -L https://github.com/heiko-braun/claude-spec-driven/releases/latest/download/claudespec-darwin-amd64 -o claudespec
 chmod +x claudespec
 sudo mv claudespec /usr/local/bin/
 ```
 
 **macOS (Apple Silicon):**
 ```bash
-curl -L https://github.com/h010198/claude-spec-driven/releases/latest/download/claudespec-darwin-arm64 -o claudespec
+curl -L https://github.com/heiko-braun/claude-spec-driven/releases/latest/download/claudespec-darwin-arm64 -o claudespec
 chmod +x claudespec
 sudo mv claudespec /usr/local/bin/
 ```
