@@ -134,7 +134,7 @@ After each phase, Claude pauses for your approval before continuing.
 ## Project Structure
 
 ```
-.claude/
+.claude/                           # SOURCE OF TRUTH - edit files here
 ├── commands/
 │   ├── plan.md                    # Entry point for /plan command
 │   ├── spec.md                    # Specification creation
@@ -143,7 +143,11 @@ After each phase, Claude pauses for your approval before continuing.
 └── specs/
     ├── TEMPLATE.md                # Spec template reference
     └── {feature}.md               # Generated specs
+
+cmd/draft/templates/.claude/       # Build artifacts (git-ignored, auto-synced)
 ```
+
+**Note:** The `.claude/` directory at the project root is the source of truth. Files in `cmd/draft/templates/.claude/` are automatically synced during builds and should never be edited directly.
 
 ## Commands Reference
 
@@ -201,6 +205,30 @@ Entry point for spec-driven development. Asks clarifying questions, creates a sp
 - **Control**: Pause points let you review, adjust, or stop
 - **Documentation**: Specs serve as lightweight feature docs
 - **Resumability**: Interrupted work can be continued from where you left off
+
+## Development
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/heiko-braun/draft.git
+cd draft
+
+# Build (automatically syncs templates from .claude/)
+make build
+
+# Or build and install
+make install
+```
+
+The build process automatically syncs templates from `.claude/` (source of truth) to `cmd/draft/templates/.claude/` (embed location) before building the binary.
+
+### Template Source of Truth
+
+- **Edit templates in**: `.claude/commands/*.md` and `.claude/specs/TEMPLATE.md`
+- **Never edit**: `cmd/draft/templates/.claude/` (auto-generated build artifacts)
+- **Manual sync**: `make sync-templates` (automatic when running `make build` or `make install`)
 
 ## License
 
