@@ -40,7 +40,13 @@ Use the project's existing patterns and tech stack to inform your questions. Ref
 
 Write a brief spec to `/specs/{feature-name}.md` using the template in `/specs/TEMPLATE.md`.
 
-Keep it concise:
+**Front-matter**: Include YAML front-matter at the top with:
+- `title`: Feature name (extracted from user discussion)
+- `description`: One-line summary (extracted from user discussion)
+- `status: proposed`
+- `author`: Get from git config using `git config user.name` and `git config user.email` in format "Name <email>"
+
+Keep content concise:
 - Goal: 1-2 sentences
 - Acceptance Criteria: 3-5 checkboxes
 - Approach: 2-3 sentences

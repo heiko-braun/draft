@@ -1,3 +1,10 @@
+---
+title: Rename Project from claudespec to draft
+description: Rebrand project to avoid trademark issues and make tool AI-assistant agnostic
+status: implemented
+author: Heiko braun <ike.braun@googlemail.com>
+---
+
 # Feature: Rename Project from claudespec to draft
 
 ## Goal

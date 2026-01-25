@@ -60,6 +60,7 @@ Only mark complete when all criteria pass.
 ### 5. Update Spec
 
 After successful implementation:
+- **Update status to implemented**: If the spec has front-matter with a `status` field, update it from `proposed` to `implemented`
 - Check off completed acceptance criteria in the spec file
 - Add any notes about implementation decisions
 

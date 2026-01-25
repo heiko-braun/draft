@@ -20,6 +20,7 @@ Refine an existing specification based on new insights, feedback, or changing re
    - Are there specific pain points with the current spec?
 
 3. **Update the spec in place**:
+   - **Preserve front-matter**: Keep all existing front-matter fields (title, description, author). Keep `status: proposed` (refinements don't change status)
    - Preserve completed acceptance criteria checkboxes
    - Update goals, criteria, or approach as needed
    - Add to "Out of Scope" if removing features
