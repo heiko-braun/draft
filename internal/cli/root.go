@@ -24,6 +24,7 @@ func Execute(templates embed.FS, version string) error {
 
 	rootCmd.AddCommand(newInitCmd())
 	rootCmd.AddCommand(newVersionCmd())
+	rootCmd.AddCommand(newPresentCmd())
 
 	return rootCmd.Execute()
 }
