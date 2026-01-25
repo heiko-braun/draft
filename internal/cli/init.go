@@ -202,6 +202,11 @@ func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS) (int
 				return os.MkdirAll(targetPath, 0755)
 			}
 
+			// Ensure parent directory exists
+			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+				return fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err)
+			}
+
 			// Read file from FS
 			content, err := fs.ReadFile(templatesFS, path)
 			if err != nil {

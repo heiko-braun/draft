@@ -168,17 +168,26 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 		relPath := parts[1] // Everything after the root directory
 
 		// Only extract template files (not project-specific specs)
+		// Support both old (.claude/specs/) and new (specs/) locations for backward compatibility
 		allowedFiles := []string{
 			".claude/commands/spec.md",
 			".claude/commands/implement.md",
 			".claude/commands/refine.md",
-			"specs/TEMPLATE.md",
+			"specs/TEMPLATE.md",         // New location
+			".claude/specs/TEMPLATE.md", // Old location (for backward compatibility)
 		}
 
 		allowed := false
+		var targetPath string
 		for _, allowedFile := range allowedFiles {
 			if relPath == allowedFile {
 				allowed = true
+				// Normalize old location to new location
+				if relPath == ".claude/specs/TEMPLATE.md" {
+					targetPath = "specs/TEMPLATE.md"
+				} else {
+					targetPath = relPath
+				}
 				break
 			}
 		}
@@ -197,7 +206,8 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 				return nil, fmt.Errorf("failed to read file %s: %w", header.Name, err)
 			}
 
-			memFS.addFile(relPath, content)
+			// Use normalized target path (handles old -> new location mapping)
+			memFS.addFile(targetPath, content)
 		}
 	}
 
