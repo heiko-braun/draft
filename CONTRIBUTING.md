@@ -1,4 +1,4 @@
-# Contributing to Claude Spec-Driven
+# Contributing to Draft
 
 Thank you for your interest in contributing! This guide will help you set up your development environment and understand the project structure.
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing! This guide will help you set up you
 1. **Fork and clone the repository:**
 
 ```bash
-git clone https://github.com/heiko-braun/claude-spec-driven.git
-cd claude-spec-driven
+git clone https://github.com/heiko-braun/draft.git
+cd draft
 ```
 
 2. **Install dependencies:**
@@ -38,11 +38,11 @@ This installs a pre-commit hook that automatically checks your code before each 
 ### Building the CLI
 
 ```bash
-# Build the claudespec binary
+# Build the draft binary
 make build
 
-# The binary will be in bin/claudespec
-./bin/claudespec --version
+# The binary will be in bin/draft
+./bin/draft --version
 ```
 
 ### Running Tests
@@ -93,8 +93,8 @@ The project includes several helpful Make targets:
 
 | Target | Description |
 |--------|-------------|
-| `make build` | Build the claudespec binary to `bin/claudespec` |
-| `make install` | Install claudespec to `$GOPATH/bin` |
+| `make build` | Build the draft binary to `bin/draft` |
+| `make install` | Install draft to `$GOPATH/bin` |
 | `make test` | Run all tests |
 | `make fmt` | Format all Go code with `go fmt` |
 | `make vet` | Run `go vet` static analysis |
@@ -113,8 +113,8 @@ The build process injects version information at compile time using ldflags:
 These are accessible via the `--version` flag:
 
 ```bash
-./bin/claudespec --version
-# Output: claudespec version v1.0.0 (commit: abc123, built: 2024-01-25T10:00:00Z)
+./bin/draft --version
+# Output: draft version v1.0.0 (commit: abc123, built: 2024-01-25T10:00:00Z)
 ```
 
 ## Release Process
@@ -165,7 +165,7 @@ All checks must pass before a PR can be merged.
 │       ├── pr-verify.yml     # PR verification checks
 │       └── release.yml       # Release automation
 ├── cmd/
-│   └── claudespec/           # CLI entry point
+│   └── draft/                # CLI entry point
 │       ├── main.go
 │       └── templates/.claude/ # Embedded template files
 ├── internal/
@@ -226,19 +226,19 @@ The CLI supports multiple template sources for testing:
 
 ```bash
 # Use local templates
-CLAUDESPEC_TEMPLATES=/path/to/templates ./bin/claudespec init
+DRAFT_TEMPLATES=/path/to/templates ./bin/draft init
 
 # Use specific GitHub release version
-./bin/claudespec init --version v1.0.0
+./bin/draft init --version v1.0.0
 
 # Normal use (latest release or embedded fallback)
-./bin/claudespec init
+./bin/draft init
 ```
 
 ## Getting Help
 
-- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/heiko-braun/claude-spec-driven/issues)
-- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/heiko-braun/claude-spec-driven/discussions)
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/heiko-braun/draft/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/heiko-braun/draft/discussions)
 
 ## License
 

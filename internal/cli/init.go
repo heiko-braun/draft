@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/heiko-braun/claude-spec-driven/internal/templates"
+	"github.com/heiko-braun/draft/internal/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +18,8 @@ var (
 func newInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init [directory]",
-		Short: "Initialize Claude spec-driven development workflow",
-		Long:  `Initialize a repository with Claude spec-driven development commands and templates.`,
+		Short: "Initialize specification-driven development workflow",
+		Long:  `Initialize a repository with specification-driven development commands and templates for AI coding assistants.`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE:  runInit,
 	}
@@ -94,8 +94,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 // loadTemplates attempts to load templates with priority: local > GitHub > embedded
 func loadTemplates() (*templates.LoadResult, error) {
-	// 1. Check for CLAUDESPEC_TEMPLATES environment variable
-	if localPath := os.Getenv("CLAUDESPEC_TEMPLATES"); localPath != "" {
+	// 1. Check for DRAFT_TEMPLATES environment variable
+	if localPath := os.Getenv("DRAFT_TEMPLATES"); localPath != "" {
 		loader := templates.NewLocalLoader(localPath)
 		templatesFS, err := loader.Load()
 		if err != nil {

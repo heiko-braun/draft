@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-commit hook for claudespec
+# Pre-commit hook for draft
 # Runs formatting, dependency tidying, and static analysis
 
 set -e

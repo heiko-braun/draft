@@ -1,4 +1,4 @@
-# GoReleaser configuration for claudespec CLI
+# GoReleaser configuration for draft CLI
 # https://goreleaser.com
 
 version: 2
@@ -9,9 +9,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: claudespec
-    main: ./cmd/claudespec
-    binary: claudespec
+  - id: draft
+    main: ./cmd/draft
+    binary: draft
 
     # macOS only for initial release
     goos:
@@ -73,11 +73,11 @@ changelog:
 release:
   github:
     owner: heiko-braun
-    name: claude-spec-driven
+    name: draft
   draft: false
   prerelease: auto
   mode: replace
   header: |
-    ## claudespec {{ .Tag }}
+    ## draft {{ .Tag }}
 
-    Bootstrap the Claude spec-driven development workflow into any Git repository.
+    Draft your specs before you code - a specification-driven development workflow for AI assistants.
