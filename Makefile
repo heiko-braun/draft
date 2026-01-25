@@ -1,4 +1,4 @@
-.PHONY: build install clean test
+.PHONY: build install clean test fmt vet install-hooks
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -16,6 +16,15 @@ clean:
 
 test:
 	go test ./...
+
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+install-hooks:
+	./scripts/install-git-hooks.sh
 
 run:
 	go run $(LDFLAGS) ./cmd/claudespec $(ARGS)

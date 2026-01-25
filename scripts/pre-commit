@@ -1,0 +1,58 @@
+#!/bin/bash
+# Pre-commit hook for claudespec
+# Runs formatting, dependency tidying, and static analysis
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Store the current state
+STASH_NAME="pre-commit-$(date +%s)"
+git stash push -q --keep-index -m "$STASH_NAME"
+
+# Function to restore state on exit
+restore_stash() {
+    if git stash list | grep -q "$STASH_NAME"; then
+        git stash pop -q
+    fi
+}
+trap restore_stash EXIT
+
+# 1. Check formatting
+echo "  → Checking code formatting..."
+UNFORMATTED=$(gofmt -l .)
+if [ -n "$UNFORMATTED" ]; then
+    echo "❌ Code is not formatted. Please run 'make fmt' or 'go fmt ./...'"
+    echo "Unformatted files:"
+    echo "$UNFORMATTED"
+    exit 1
+fi
+
+# 2. Run go mod tidy and check for changes
+echo "  → Checking go.mod/go.sum..."
+go mod tidy
+if ! git diff --exit-code go.mod go.sum > /dev/null; then
+    echo "❌ go.mod or go.sum needs tidying. Please run 'go mod tidy' and commit the changes."
+    git diff go.mod go.sum
+    exit 1
+fi
+
+# 3. Run go vet on changed packages only
+echo "  → Running go vet on changed packages..."
+CHANGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+if [ -n "$CHANGED_GO_FILES" ]; then
+    # Get unique package directories from changed files
+    CHANGED_PACKAGES=$(echo "$CHANGED_GO_FILES" | xargs -n1 dirname | sort -u | sed 's#^#./#')
+
+    if [ -n "$CHANGED_PACKAGES" ]; then
+        if ! echo "$CHANGED_PACKAGES" | xargs go vet; then
+            echo "❌ go vet found issues in changed packages. Please fix them before committing."
+            exit 1
+        fi
+    fi
+else
+    echo "  → No Go files changed, skipping go vet"
+fi
+
+echo "✅ All pre-commit checks passed!"
+exit 0
