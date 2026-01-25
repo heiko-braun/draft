@@ -9,51 +9,25 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build and Release
+  goreleaser:
+    name: Release with GoReleaser
     runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for GoReleaser changelog
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
 
-      - name: Get version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Build binaries
-        run: |
-          # Build for macOS amd64
-          GOOS=darwin GOARCH=amd64 go build \
-            -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o bin/claudespec-darwin-amd64 \
-            ./cmd/claudespec
-
-          # Build for macOS arm64
-          GOOS=darwin GOARCH=arm64 go build \
-            -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }} -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o bin/claudespec-darwin-arm64 \
-            ./cmd/claudespec
-
-      - name: Create checksums
-        run: |
-          cd bin
-          shasum -a 256 claudespec-darwin-amd64 > checksums.txt
-          shasum -a 256 claudespec-darwin-arm64 >> checksums.txt
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          files: |
-            bin/claudespec-darwin-amd64
-            bin/claudespec-darwin-arm64
-            bin/checksums.txt
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

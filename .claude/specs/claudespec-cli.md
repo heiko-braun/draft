@@ -27,7 +27,7 @@ Build a Go CLI using the `cobra` library for command structure. The `init` comma
 5. If `--force` or no conflicts, create directories and copy files
 6. Display summary: "Successfully created X files in .claude/"
 
-Use GitHub Actions to build binaries for macOS (amd64/arm64) and publish to GitHub releases. Version will be injected at build time via `-ldflags`.
+Use GoReleaser with GitHub Actions to build binaries for macOS (amd64/arm64) and publish to GitHub releases. GoReleaser will handle the build pipeline, binary packaging, checksum generation, and release creation. Version will be injected at build time via `-ldflags`.
 
 ## Out of Scope
 
@@ -42,3 +42,5 @@ Use GitHub Actions to build binaries for macOS (amd64/arm64) and publish to GitH
 ## Notes
 
 The CLI will be located in this repository under `cmd/claudespec/`. The embedded files will be sourced from `.claude/` directory at build time. Consider adding a simple README in the root explaining installation and usage.
+
+**Refinement 2026-01-25**: Updated approach to use GoReleaser for build and release automation instead of custom GitHub Actions build scripts. This provides better release management, automatic checksum generation, and standardized binary packaging.

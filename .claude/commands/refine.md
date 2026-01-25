@@ -1,3 +1,7 @@
+---
+description: Refines existing specs
+---
+
 # Refine Existing Spec
 
 Refine an existing specification based on new insights, feedback, or changing requirements.
