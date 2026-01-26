@@ -8,7 +8,7 @@ import (
 	"github.com/heiko-braun/draft/internal/cli"
 )
 
-//go:embed templates/.claude
+//go:embed templates/.claude templates/.cursor
 var templates embed.FS
 
 var (

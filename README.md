@@ -55,6 +55,15 @@ Then bootstrap your project:
 ```bash
 cd /path/to/your/project
 draft init
+
+# Initialize for Claude only
+draft init --agent claude
+
+# Initialize for Cursor only
+draft init --agent cursor
+
+# Initialize for both (default)
+draft init
 ```
 
 ### Manual Installation
@@ -72,8 +81,14 @@ cp -r .claude/ /path/to/your/project/
 The `draft` CLI helps you bootstrap the spec-driven workflow into any repository:
 
 ```bash
-# Initialize in current directory
+# Initialize for both Claude and Cursor (default)
 draft init
+
+# Initialize for Claude Code only
+draft init --agent claude
+
+# Initialize for Cursor only
+draft init --agent cursor
 
 # Initialize in specific directory
 draft init /path/to/project
@@ -84,6 +99,11 @@ draft init --force
 # Check version
 draft --version
 ```
+
+The `--agent` flag determines which AI coding assistant format to use:
+- **`--agent claude`**: Creates `.claude/commands/` with Claude Code slash commands
+- **`--agent cursor`**: Creates `.cursor/skills/` with Cursor-compatible skills
+- **No flag**: Creates both formats (default)
 
 If files already exist, the CLI will warn you and exit. Use `--force` to overwrite them.
 
@@ -143,11 +163,17 @@ After each phase, Claude pauses for your approval before continuing.
 ## Project Structure
 
 ```
-.claude/                           # Workflow commands (SOURCE OF TRUTH)
+.claude/                           # Claude Code workflow commands (SOURCE OF TRUTH)
 ├── commands/
 │   ├── spec.md                    # Specification creation
 │   ├── implement.md               # Implementation with checkpoints
 │   └── refine.md                  # Refine existing specs
+
+.cursor/                           # Cursor workflow skills (SOURCE OF TRUTH)
+├── skills/
+│   ├── spec/SKILL.md              # Specification creation
+│   ├── implement/SKILL.md         # Implementation with checkpoints
+│   └── refine/SKILL.md            # Refine existing specs
 
 specs/                             # Project specifications (SOURCE OF TRUTH)
 ├── TEMPLATE.md                    # Spec template reference
@@ -155,10 +181,11 @@ specs/                             # Project specifications (SOURCE OF TRUTH)
 
 cmd/draft/templates/               # Build artifacts (git-ignored, auto-synced)
 ├── .claude/
+├── .cursor/
 └── specs/
 ```
 
-**Note:** The `.claude/` and `specs/` directories at the project root are the source of truth. Files in `cmd/draft/templates/` are automatically synced during builds and should never be edited directly.
+**Note:** The `.claude/`, `.cursor/`, and `specs/` directories at the project root are the source of truth. Files in `cmd/draft/templates/` are automatically synced during builds and should never be edited directly.
 
 ## Commands Reference
 
@@ -239,11 +266,11 @@ make build
 make install
 ```
 
-The build process automatically syncs templates from `.claude/` (source of truth) to `cmd/draft/templates/.claude/` (embed location) before building the binary.
+The build process automatically syncs templates from `.claude/` and `.cursor/` (source of truth) to `cmd/draft/templates/` (embed location) before building the binary.
 
 ### Template Source of Truth
 
-- **Edit templates in**: `.claude/commands/*.md` and `specs/TEMPLATE.md`
+- **Edit templates in**: `.claude/commands/*.md`, `.cursor/skills/*/SKILL.md`, and `specs/TEMPLATE.md`
 - **Never edit**: `cmd/draft/templates/` (auto-generated build artifacts)
 - **Manual sync**: `make sync-templates` (automatic when running `make build` or `make install`)
 
