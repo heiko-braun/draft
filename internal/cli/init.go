@@ -13,6 +13,7 @@ import (
 var (
 	forceFlag   bool
 	versionFlag string
+	agentFlag   string
 )
 
 func newInitCmd() *cobra.Command {
@@ -26,6 +27,7 @@ func newInitCmd() *cobra.Command {
 
 	cmd.Flags().BoolVarP(&forceFlag, "force", "f", false, "Overwrite existing files")
 	cmd.Flags().StringVar(&versionFlag, "version", "", "Fetch templates from specific GitHub release version (e.g., v1.0.0)")
+	cmd.Flags().StringVar(&agentFlag, "agent", "", "AI agent to initialize for: 'claude', 'cursor', or both if omitted")
 
 	return cmd
 }
@@ -34,6 +36,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 	targetDir := "."
 	if len(args) > 0 {
 		targetDir = args[0]
+	}
+
+	// Validate agent flag
+	if agentFlag != "" && agentFlag != "claude" && agentFlag != "cursor" {
+		return fmt.Errorf("invalid --agent value: %s (must be 'claude' or 'cursor')", agentFlag)
 	}
 
 	// Convert to absolute path
@@ -56,8 +63,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Display template source
 	fmt.Printf("Loading templates from %s\n", result.Source)
 
+	// Determine which agents to initialize
+	agents := getAgentsToInit()
+
 	// Scan for conflicts
-	conflicts, err := findConflicts(absTarget)
+	conflicts, err := findConflicts(absTarget, agents)
 	if err != nil {
 		return fmt.Errorf("failed to scan for conflicts: %w", err)
 	}
@@ -73,7 +83,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Copy files
-	filesCreated, filesOverwritten, err := copyTemplates(absTarget, conflicts, result.FS)
+	filesCreated, filesOverwritten, err := copyTemplates(absTarget, conflicts, result.FS, agents)
 	if err != nil {
 		return fmt.Errorf("failed to copy templates: %w", err)
 	}
@@ -87,9 +97,43 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	total := filesCreated + len(filesOverwritten)
-	fmt.Printf("Successfully created %d files in .claude/ and specs/\n", total)
+
+	// Build message for which directories were created
+	dirs := []string{}
+	for _, agent := range agents {
+		switch agent {
+		case "claude":
+			dirs = append(dirs, ".claude/")
+		case "cursor":
+			dirs = append(dirs, ".cursor/")
+		}
+	}
+	dirs = append(dirs, "specs/")
+
+	dirsMsg := ""
+	if len(dirs) == 1 {
+		dirsMsg = dirs[0]
+	} else if len(dirs) == 2 {
+		dirsMsg = dirs[0] + " and " + dirs[1]
+	} else {
+		dirsMsg = dirs[0] + ", " + dirs[1] + " and " + dirs[2]
+	}
+
+	fmt.Printf("Successfully created %d files in %s\n", total, dirsMsg)
 
 	return nil
+}
+
+// getAgentsToInit returns which agents to initialize based on --agent flag
+func getAgentsToInit() []string {
+	switch agentFlag {
+	case "claude":
+		return []string{"claude"}
+	case "cursor":
+		return []string{"cursor"}
+	default:
+		return []string{"claude", "cursor"}
+	}
 }
 
 // loadTemplates attempts to load templates with priority: local > GitHub > embedded
@@ -155,16 +199,31 @@ func checkWritable(dir string) error {
 	return nil
 }
 
-func findConflicts(targetDir string) ([]string, error) {
+func findConflicts(targetDir string, agents []string) ([]string, error) {
 	var conflicts []string
 
-	// Check for existing files
-	filesToCheck := []string{
-		".claude/commands/spec.md",
-		".claude/commands/implement.md",
-		".claude/commands/refine.md",
-		"specs/TEMPLATE.md",
+	// Build list of files to check based on agents
+	filesToCheck := []string{}
+
+	for _, agent := range agents {
+		switch agent {
+		case "claude":
+			filesToCheck = append(filesToCheck,
+				".claude/commands/spec.md",
+				".claude/commands/implement.md",
+				".claude/commands/refine.md",
+			)
+		case "cursor":
+			filesToCheck = append(filesToCheck,
+				".cursor/skills/spec/SKILL.md",
+				".cursor/skills/implement/SKILL.md",
+				".cursor/skills/refine/SKILL.md",
+			)
+		}
 	}
+
+	// specs/TEMPLATE.md is always checked
+	filesToCheck = append(filesToCheck, "specs/TEMPLATE.md")
 
 	for _, file := range filesToCheck {
 		fullPath := filepath.Join(targetDir, file)
@@ -176,12 +235,21 @@ func findConflicts(targetDir string) ([]string, error) {
 	return conflicts, nil
 }
 
-func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS) (int, []string, error) {
+func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS, agents []string) (int, []string, error) {
 	filesCreated := 0
 	var filesOverwritten []string
 
-	// Walk the filesystem for both .claude and specs directories
-	roots := []string{".claude", "specs"}
+	// Build list of roots to copy based on agents
+	roots := []string{"specs"} // Always include specs
+
+	for _, agent := range agents {
+		switch agent {
+		case "claude":
+			roots = append(roots, ".claude")
+		case "cursor":
+			roots = append(roots, ".cursor")
+		}
+	}
 
 	for _, root := range roots {
 		err := fs.WalkDir(templatesFS, root, func(path string, d fs.DirEntry, err error) error {
