@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -299,6 +300,11 @@ func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS, agen
 			return nil
 		})
 		if err != nil {
+			// If the root directory doesn't exist in the FS, skip it gracefully
+			// This happens when loading from GitHub releases that don't have all formats yet
+			if errors.Is(err, fs.ErrNotExist) {
+				continue
+			}
 			return filesCreated, filesOverwritten, err
 		}
 	}
