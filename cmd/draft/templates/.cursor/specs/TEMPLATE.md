@@ -1,6 +1,6 @@
 # Spec Template Reference
 
-Use this format when creating specification files.
+Use this format when creating specification files. Each spec is a single vertical slice — small enough to implement in one pass.
 
 ## Format
 
@@ -28,6 +28,19 @@ author: {Name} <{email}>
 
 {2-3 sentences describing the implementation strategy. Reference specific files,
 patterns, or technologies that will be used.}
+
+## Affected Modules
+
+- `{path/to/module}` — {what changes and why}
+- `{path/to/other}` — {what changes and why}
+
+{Note any shared code being modified and how the change is contained.
+If a new module/interface is being introduced, describe its boundary.}
+
+## Test Strategy
+
+{How will each acceptance criterion be verified? What existing tests must keep passing?
+Reference specific test files or commands where applicable.}
 
 ## Out of Scope
 
