@@ -3,9 +3,9 @@ name: implement
 description: Implement features with phase checkpoints. Use after a spec exists in .claude/specs/ or when implementing a confirmed specification.
 ---
 
-# Checkpoint-Aware Implementation
+# Implementation
 
-You implement features methodically with user checkpoints between phases.
+You implement features as small, complete vertical slices with continuous testing.
 
 ## When to Activate
 
@@ -15,63 +15,64 @@ You implement features methodically with user checkpoints between phases.
 
 ## Workflow
 
-### 1. Load Spec
+### 1. Load Spec & Assess Blast Radius
 
 Read the relevant `/specs/{feature}.md` file. If multiple specs exist and it's unclear which one, ask the user.
 
-### 2. Create Task Breakdown
+Before writing any code, assess the change:
 
-Use TodoWrite to break the spec into phases. Prefer this order when applicable:
+- **Which modules/files will this touch?** List them. If the spec has an "Affected Modules" section, verify it's still accurate.
+- **Are we modifying shared code?** Changing a shared utility, interface, or base class affects every consumer. Flag this to the user.
+- **Can we contain the change?** Prefer adding new files/functions over modifying widely-imported ones. Prefer narrow interfaces that isolate the new behaviour from the rest of the codebase.
+- **Are we adding new dependencies?** Each dependency is a coupling point. Avoid unless clearly justified.
 
-1. **Foundation**: Data models, types, schemas
-2. **Core Logic**: Business logic, algorithms, services
-3. **Integration**: Connect components, wire up UI
-4. **Polish**: Error handling, edge cases, validation
-5. **Verification**: Test against acceptance criteria
+If the blast radius is wider than expected, flag it: *"This will touch N modules beyond what the spec anticipated. Want to proceed or restructure?"*
 
-Adapt phases to the specific feature - not all features need all phases.
+### 2. Implement
 
-### 3. Execute with Checkpoints
+Implement the spec as **one integrated piece** — types, logic, wiring, and tests together. A small vertical slice doesn't need artificial separation into "foundation" and "core logic" and "integration" phases.
 
-For each phase:
+Use TodoWrite to track progress against the spec's acceptance criteria.
 
-1. Announce what you're starting
-2. Implement the phase
-3. Summarize what was done (files changed, key decisions)
-4. Ask: **"Phase complete. Ready for the next phase?"**
-5. Only proceed on confirmation
+**Design for modularity as you go:**
+- Place new behaviour behind clear interfaces — functions, types, modules — so callers don't depend on implementation details.
+- Avoid reaching into the internals of other modules. If you need something, use or extend its public interface.
+- Keep new files/functions narrowly focused. One responsibility per unit.
+- If a change to shared code is unavoidable, make the interface change first, verify existing tests still pass, then build the new behaviour on top.
 
-This gives the user control to:
-- Review changes before continuing
-- Request adjustments
-- Pause and resume later
+**Test continuously:**
+- After each meaningful change, run existing tests to catch regressions early.
+- Write tests for new behaviour as you implement it, not after.
+- If the project has a linter or build step, run it periodically — don't wait until the end.
 
-### 4. Verify Against Spec
+### 3. Verify & Complete
 
 Before marking the feature complete:
 
-1. Re-read the spec's acceptance criteria
-2. Check each criterion explicitly
-3. Report: "✓ Criterion met" or "⚠ Needs attention: {issue}"
+1. Run the **full test suite** — not just new tests.
+2. Run the **build/linter** if the project has one.
+3. Re-read the spec's acceptance criteria and check each one explicitly.
+4. Report: "Criterion met" or "Needs attention: {issue}" for each.
 
-Only mark complete when all criteria pass.
-
-### 5. Update Spec
+Only mark complete when all criteria pass and the build is green.
 
 After successful implementation:
-- **Update status to implemented**: If the spec has front-matter with a `status` field, update it from `proposed` to `implemented`
+- **Update spec status** from `proposed` to `implemented`
 - Check off completed acceptance criteria in the spec file
 - Add any notes about implementation decisions
 
-## Checkpoint Behavior
+## Checkpoint Behaviour
 
-**Do checkpoint** after:
-- Completing a logical phase
-- Making architectural decisions
-- Any change that affects multiple files
+Since each spec is a small vertical slice, heavy checkpointing is unnecessary.
+
+**Do checkpoint** (pause and ask the user) when:
+- The blast radius turns out wider than expected
+- You face a design decision with trade-offs the user should weigh
+- A test failure reveals a deeper issue that changes the approach
 
 **Skip checkpoint** for:
-- Minor follow-up fixes within a phase
+- Normal forward progress within the spec
+- Minor follow-up fixes
 - Formatting/cleanup
 - When user explicitly says "continue without asking"
 
