@@ -144,8 +144,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the "Spec Review" category ID
-          CATEGORY_ID=$(gh api graphql -f query='
+          # Get all discussion categories
+          CATEGORIES=$(gh api graphql -f query='
             query($owner: String!, $repo: String!) {
               repository(owner: $owner, name: $repo) {
                 discussionCategories(first: 20) {
@@ -157,16 +157,32 @@ jobs:
               }
             }
           ' -f owner="${{ github.repository_owner }}" \
-            -f repo="${{ github.event.repository.name }}" \
-            --jq '.data.repository.discussionCategories.nodes[] | select(.name == "Spec Review") | .id')
+            -f repo="${{ github.event.repository.name }}")
+          
+          # Try "Spec Review" first, fall back to "Ideas" or "General"
+          CATEGORY_ID=$(echo "$CATEGORIES" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "Spec Review") | .id')
+          CATEGORY_NAME="Spec Review"
           
           if [ -z "$CATEGORY_ID" ]; then
-            echo "::error::Discussion category 'Spec Review' not found. Please create it in repository settings."
+            echo "::notice::'Spec Review' category not found, trying 'Ideas'..."
+            CATEGORY_ID=$(echo "$CATEGORIES" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "Ideas") | .id')
+            CATEGORY_NAME="Ideas"
+          fi
+          
+          if [ -z "$CATEGORY_ID" ]; then
+            echo "::notice::'Ideas' category not found, trying 'General'..."
+            CATEGORY_ID=$(echo "$CATEGORIES" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "General") | .id')
+            CATEGORY_NAME="General"
+          fi
+          
+          if [ -z "$CATEGORY_ID" ]; then
+            echo "::error::No suitable discussion category found. Please create 'Spec Review', 'Ideas', or 'General' in repository settings."
             exit 1
           fi
           
           echo "category_id=$CATEGORY_ID" >> "$GITHUB_OUTPUT"
-          echo "Found category ID: $CATEGORY_ID"
+          echo "category_name=$CATEGORY_NAME" >> "$GITHUB_OUTPUT"
+          echo "Using category: $CATEGORY_NAME ($CATEGORY_ID)"
 
       - name: Create discussion
         id: create
