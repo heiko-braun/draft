@@ -106,6 +106,8 @@ jobs:
         if: steps.parse.outputs.has_review_spec == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           SLUG="${{ steps.parse.outputs.spec_slug }}"
           SEARCH_TITLE="[Spec Review] $SLUG"
@@ -113,21 +115,7 @@ jobs:
           echo "Checking for existing discussion: $SEARCH_TITLE"
           
           # Query existing discussions
-          EXISTING=$(gh api graphql -f query='
-            query($owner: String!, $repo: String!) {
-              repository(owner: $owner, name: $repo) {
-                discussions(first: 100) {
-                  nodes {
-                    id
-                    title
-                    url
-                  }
-                }
-              }
-            }
-          ' -f owner="${{ github.repository_owner }}" \
-            -f repo="${{ github.event.repository.name }}" \
-            --jq ".data.repository.discussions.nodes[] | select(.title == \"$SEARCH_TITLE\") | .id" 2>/dev/null || echo "")
+          EXISTING=$(gh api graphql -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { discussions(first: 100) { nodes { id title url } } } }' -f owner="$REPO_OWNER" -f repo="$REPO_NAME" --jq ".data.repository.discussions.nodes[] | select(.title == \"$SEARCH_TITLE\") | .id" 2>/dev/null || echo "")
           
           if [ -n "$EXISTING" ]; then
             echo "Discussion already exists: $EXISTING"
@@ -143,21 +131,11 @@ jobs:
         if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           # Get all discussion categories
-          CATEGORIES=$(gh api graphql -f query='
-            query($owner: String!, $repo: String!) {
-              repository(owner: $owner, name: $repo) {
-                discussionCategories(first: 20) {
-                  nodes {
-                    id
-                    name
-                  }
-                }
-              }
-            }
-          ' -f owner="${{ github.repository_owner }}" \
-            -f repo="${{ github.event.repository.name }}")
+          CATEGORIES=$(gh api graphql -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { discussionCategories(first: 20) { nodes { id name } } } }' -f owner="$REPO_OWNER" -f repo="$REPO_NAME")
           
           # Try "Spec Review" first, fall back to "Ideas" or "General"
           CATEGORY_ID=$(echo "$CATEGORIES" | jq -r '.data.repository.discussionCategories.nodes[] | select(.name == "Spec Review") | .id')
@@ -189,6 +167,9 @@ jobs:
         if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          SPEC_CONTENT: ${{ steps.parse.outputs.spec_content }}
         run: |
           SLUG="${{ steps.parse.outputs.spec_slug }}"
           TITLE="[Spec Review] $SLUG"
@@ -196,43 +177,18 @@ jobs:
           
           # Create the discussion body
           BODY="# Spec Review: $SLUG
-          
+
           This discussion was automatically created for spec review.
-          
+
           ---
-          
-          ${{ steps.parse.outputs.spec_content }}"
+
+          $SPEC_CONTENT"
           
           # Get repository ID
-          REPO_ID=$(gh api graphql -f query='
-            query($owner: String!, $repo: String!) {
-              repository(owner: $owner, name: $repo) {
-                id
-              }
-            }
-          ' -f owner="${{ github.repository_owner }}" \
-            -f repo="${{ github.event.repository.name }}" \
-            --jq '.data.repository.id')
+          REPO_ID=$(gh api graphql -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { id } }' -f owner="$REPO_OWNER" -f repo="$REPO_NAME" --jq '.data.repository.id')
           
           # Create the discussion
-          RESULT=$(gh api graphql -f query='
-            mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
-              createDiscussion(input: {
-                repositoryId: $repositoryId,
-                categoryId: $categoryId,
-                title: $title,
-                body: $body
-              }) {
-                discussion {
-                  id
-                  url
-                }
-              }
-            }
-          ' -f repositoryId="$REPO_ID" \
-            -f categoryId="$CATEGORY_ID" \
-            -f title="$TITLE" \
-            -f body="$BODY")
+          RESULT=$(gh api graphql -f query='mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) { createDiscussion(input: { repositoryId: $repositoryId, categoryId: $categoryId, title: $title, body: $body }) { discussion { id url } } }' -f repositoryId="$REPO_ID" -f categoryId="$CATEGORY_ID" -f title="$TITLE" -f body="$BODY")
           
           DISCUSSION_ID=$(echo "$RESULT" | jq -r '.data.createDiscussion.discussion.id')
           DISCUSSION_URL=$(echo "$RESULT" | jq -r '.data.createDiscussion.discussion.url')
@@ -340,19 +296,6 @@ jobs:
           *Please note: This is an AI-generated review and may not catch all issues. Human review is still essential.*"
           
           # Post comment to discussion
-          gh api graphql -f query='
-            mutation($discussionId: ID!, $body: String!) {
-              addDiscussionComment(input: {
-                discussionId: $discussionId,
-                body: $body
-              }) {
-                comment {
-                  id
-                  url
-                }
-              }
-            }
-          ' -f discussionId="$DISCUSSION_ID" \
-            -f body="$COMMENT_BODY"
+          gh api graphql -f query='mutation($discussionId: ID!, $body: String!) { addDiscussionComment(input: { discussionId: $discussionId, body: $body }) { comment { id url } } }' -f discussionId="$DISCUSSION_ID" -f body="$COMMENT_BODY"
           
           echo "::notice::Posted AI review comment to discussion"
