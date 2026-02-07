@@ -107,7 +107,7 @@ jobs:
         id: check
         if: steps.parse.outputs.has_review_spec == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
@@ -132,7 +132,7 @@ jobs:
         id: category
         if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
@@ -168,7 +168,7 @@ jobs:
         id: create
         if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           SPEC_CONTENT: ${{ steps.parse.outputs.spec_content }}
@@ -280,7 +280,7 @@ jobs:
       - name: Post review comment
         if: steps.check-key.outputs.has_key == 'true' && steps.review.outputs.has_review == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           DISCUSSION_ID="${{ needs.create-discussion.outputs.discussion_id }}"
           REVIEW=$(cat /tmp/review.md)
