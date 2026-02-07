@@ -114,7 +114,7 @@ jobs:
           
           # Query existing discussions
           EXISTING=$(gh api graphql -f query='
-            query($owner: String!, $repo: String!, $searchTitle: String!) {
+            query($owner: String!, $repo: String!) {
               repository(owner: $owner, name: $repo) {
                 discussions(first: 100) {
                   nodes {
@@ -127,7 +127,6 @@ jobs:
             }
           ' -f owner="${{ github.repository_owner }}" \
             -f repo="${{ github.event.repository.name }}" \
-            -f searchTitle="$SEARCH_TITLE" \
             --jq ".data.repository.discussions.nodes[] | select(.title == \"$SEARCH_TITLE\") | .id" 2>/dev/null || echo "")
           
           if [ -n "$EXISTING" ]; then
