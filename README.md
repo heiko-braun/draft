@@ -18,10 +18,11 @@ This framework adds a **specification phase** before implementation, ensuring al
 ```mermaid
 flowchart TD
     A["/spec {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
-    B --> C["2. SPEC Document<br/>Write lightweight spec to<br/>specs/{feature}.md"]
+    B --> B2["1.5. SCOPE CHECK<br/>Verify feature is small enough<br/>for a single vertical slice"]
+    B2 --> C["2. SPEC Document<br/>Write lightweight spec to<br/>specs/{feature}.md"]
     C --> D["3. CONFIRM Approval<br/>Get explicit user approval<br/>before any implementation"]
     D --> E["/implement {feature}"]
-    E --> F["4. BUILD with Checkpoints<br/>Build in phases with<br/>user checkpoints between each"]
+    E --> F["4. BUILD as Vertical Slice<br/>Implement as one integrated piece<br/>with continuous testing"]
 ```
 
 ## Installation
@@ -131,6 +132,13 @@ This loads the spec and builds in phases with checkpoints between each.
 Specs are stored in `/specs/` with this structure:
 
 ```markdown
+---
+title: {Feature name}
+description: {One-line summary}
+status: proposed
+author: {Name <email>}
+---
+
 # Feature: {name}
 
 ## Goal
@@ -139,26 +147,31 @@ Specs are stored in `/specs/` with this structure:
 ## Acceptance Criteria
 - [ ] {Testable criterion 1}
 - [ ] {Testable criterion 2}
+(3-5 criteria max — more suggests the scope is too large)
 
 ## Approach
 {2-3 sentences on implementation strategy}
+
+## Affected Modules
+{List which modules/files change and where the boundary is}
+
+## Test Strategy
+{How criteria will be verified}
 
 ## Out of Scope
 - {Explicit exclusion 1}
 - {Explicit exclusion 2}
 ```
 
-### Implementation Phases
+### Implementation as Vertical Slices
 
-After spec approval, implementation proceeds in phases:
+After spec approval, implementation proceeds as **one integrated piece** — types, logic, wiring, and tests together. Each spec represents a small, complete vertical slice delivered in one pass.
 
-1. **Foundation** - Data models, types, schemas
-2. **Core Logic** - Business logic, algorithms
-3. **Integration** - Wire up components
-4. **Polish** - Error handling, edge cases
-5. **Verification** - Check acceptance criteria
+**Blast radius assessment**: Before coding, the assistant evaluates which modules will be touched and whether the change can be contained. If the blast radius is wider than expected, you'll be asked whether to proceed or restructure.
 
-After each phase, Claude pauses for your approval before continuing.
+**Continuous testing**: Tests are written alongside implementation, not after. The full test suite runs before marking complete.
+
+**Smart checkpoints**: The assistant pauses only when needed (unexpected blast radius, design trade-offs, test failures) rather than after arbitrary phases.
 
 ## Project Structure
 
@@ -194,9 +207,10 @@ cmd/draft/templates/               # Build artifacts (git-ignored, auto-synced)
 Creates a specification through a question-driven process.
 
 **Process:**
-1. Asks 3-5 clarifying questions (one at a time)
-2. Creates spec in `/specs/{feature}.md`
-3. Presents spec for your review and confirmation
+1. Asks 3-5 clarifying questions (one at a time), including modularity considerations
+2. Checks scope — if too large (>5 criteria, wide blast radius), suggests splitting into multiple specs
+3. Creates spec in `/specs/{feature}.md` with YAML front-matter (title, description, status, author)
+4. Presents spec for your review and confirmation
 
 **Use when:**
 - Features involving multiple files or architectural decisions
@@ -209,14 +223,16 @@ Creates a specification through a question-driven process.
 
 ### `/implement` Command
 
-Implements a feature from an existing specification with phased checkpoints.
+Implements a feature from an existing specification as a single vertical slice.
 
 **Process:**
 1. Loads spec from `/specs/{feature}.md`
-2. Breaks work into logical phases (foundation, core logic, integration, polish, verification)
-3. After each phase, pauses for your approval before continuing
-4. Verifies against acceptance criteria when complete
-5. Updates spec to mark completed criteria
+2. Assesses blast radius — which modules will be touched, can the change be contained?
+3. Implements as one integrated piece (types, logic, wiring, tests together)
+4. Tests continuously during implementation
+5. Pauses only when needed (unexpected scope, design decisions, test failures)
+6. Verifies against acceptance criteria when complete
+7. Updates spec status from `proposed` to `implemented` and marks completed criteria
 
 **Use when:**
 - A spec has been created and confirmed with `/spec`
@@ -230,9 +246,11 @@ Updates an existing specification while preserving progress.
 **Process:**
 1. Loads existing spec from `/specs/`
 2. Asks 2-3 focused refinement questions
-3. Updates spec in place (preserves completed checkboxes)
-4. Shows diff summary and asks for confirmation
-5. Documents changes with timestamp in Notes section
+3. Checks scope and modularity — flags if refinement expands blast radius
+4. Updates spec in place (preserves front-matter and completed checkboxes)
+5. Updates "Affected Modules" and "Test Strategy" if changes alter them
+6. Shows diff summary and asks for confirmation
+7. Documents changes with timestamp in Notes section
 
 **Use when:**
 - Spec needs updates based on feedback
