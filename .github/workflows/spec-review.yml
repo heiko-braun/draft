@@ -1,0 +1,343 @@
+name: Spec Review
+
+on:
+  push:
+    paths:
+      - 'specs/*.md'
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+  discussions: write
+
+jobs:
+  create-discussion:
+    name: Create Discussion for Review Specs
+    runs-on: ubuntu-latest
+    outputs:
+      discussion_id: ${{ steps.create.outputs.discussion_id }}
+      discussion_url: ${{ steps.create.outputs.discussion_url }}
+      spec_content: ${{ steps.parse.outputs.spec_content }}
+      has_review_spec: ${{ steps.parse.outputs.has_review_spec }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need previous commit to detect changed files
+
+      - name: Get changed spec files
+        id: changed
+        run: |
+          # Get list of changed spec files
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- 'specs/*.md' 2>/dev/null || git diff --name-only --diff-filter=A HEAD -- 'specs/*.md')
+          {
+            echo "files<<EOF"
+            echo "$CHANGED_FILES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Changed spec files: $CHANGED_FILES"
+
+      - name: Parse specs and check for review status
+        id: parse
+        run: |
+          HAS_REVIEW_SPEC="false"
+          SPEC_CONTENT=""
+          SPEC_SLUG=""
+          SPEC_TITLE=""
+          
+          # Read changed files from previous step
+          CHANGED_FILES="${{ steps.changed.outputs.files }}"
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No spec files changed"
+            echo "has_review_spec=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Process each changed spec file
+          for file in $CHANGED_FILES; do
+            if [ ! -f "$file" ]; then
+              echo "File not found: $file"
+              continue
+            fi
+            
+            echo "Processing: $file"
+            
+            # Extract front-matter (between first two --- lines)
+            FRONT_MATTER=$(sed -n '/^---$/,/^---$/p' "$file" | head -n -1 | tail -n +2)
+            
+            # Check if status is 'review'
+            STATUS=$(echo "$FRONT_MATTER" | grep -E '^status:' | sed 's/status:[[:space:]]*//' | tr -d '\r')
+            echo "Status: '$STATUS'"
+            
+            if [ "$STATUS" = "review" ]; then
+              HAS_REVIEW_SPEC="true"
+              
+              # Extract slug from filename (without path and extension)
+              SPEC_SLUG=$(basename "$file" .md)
+              
+              # Extract title from front-matter
+              SPEC_TITLE=$(echo "$FRONT_MATTER" | grep -E '^title:' | sed 's/title:[[:space:]]*//' | tr -d '\r')
+              
+              # Get full spec content (without front-matter for cleaner discussion body)
+              SPEC_CONTENT=$(sed '1{/^---$/d}' "$file" | sed '1,/^---$/d')
+              
+              echo "Found review spec: $SPEC_SLUG"
+              echo "Title: $SPEC_TITLE"
+              break  # Process first review spec found
+            fi
+          done
+          
+          echo "has_review_spec=$HAS_REVIEW_SPEC" >> "$GITHUB_OUTPUT"
+          echo "spec_slug=$SPEC_SLUG" >> "$GITHUB_OUTPUT"
+          echo "spec_title=$SPEC_TITLE" >> "$GITHUB_OUTPUT"
+          
+          # Use heredoc for multiline content
+          {
+            echo "spec_content<<SPEC_EOF"
+            echo "$SPEC_CONTENT"
+            echo "SPEC_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check for existing discussion
+        id: check
+        if: steps.parse.outputs.has_review_spec == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SLUG="${{ steps.parse.outputs.spec_slug }}"
+          SEARCH_TITLE="[Spec Review] $SLUG"
+          
+          echo "Checking for existing discussion: $SEARCH_TITLE"
+          
+          # Query existing discussions
+          EXISTING=$(gh api graphql -f query='
+            query($owner: String!, $repo: String!, $searchTitle: String!) {
+              repository(owner: $owner, name: $repo) {
+                discussions(first: 100) {
+                  nodes {
+                    id
+                    title
+                    url
+                  }
+                }
+              }
+            }
+          ' -f owner="${{ github.repository_owner }}" \
+            -f repo="${{ github.event.repository.name }}" \
+            -f searchTitle="$SEARCH_TITLE" \
+            --jq ".data.repository.discussions.nodes[] | select(.title == \"$SEARCH_TITLE\") | .id" 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING" ]; then
+            echo "Discussion already exists: $EXISTING"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "discussion_id=$EXISTING" >> "$GITHUB_OUTPUT"
+          else
+            echo "No existing discussion found"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get discussion category ID
+        id: category
+        if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the "Spec Review" category ID
+          CATEGORY_ID=$(gh api graphql -f query='
+            query($owner: String!, $repo: String!) {
+              repository(owner: $owner, name: $repo) {
+                discussionCategories(first: 20) {
+                  nodes {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          ' -f owner="${{ github.repository_owner }}" \
+            -f repo="${{ github.event.repository.name }}" \
+            --jq '.data.repository.discussionCategories.nodes[] | select(.name == "Spec Review") | .id')
+          
+          if [ -z "$CATEGORY_ID" ]; then
+            echo "::error::Discussion category 'Spec Review' not found. Please create it in repository settings."
+            exit 1
+          fi
+          
+          echo "category_id=$CATEGORY_ID" >> "$GITHUB_OUTPUT"
+          echo "Found category ID: $CATEGORY_ID"
+
+      - name: Create discussion
+        id: create
+        if: steps.parse.outputs.has_review_spec == 'true' && steps.check.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SLUG="${{ steps.parse.outputs.spec_slug }}"
+          TITLE="[Spec Review] $SLUG"
+          CATEGORY_ID="${{ steps.category.outputs.category_id }}"
+          
+          # Create the discussion body
+          BODY="# Spec Review: $SLUG
+          
+          This discussion was automatically created for spec review.
+          
+          ---
+          
+          ${{ steps.parse.outputs.spec_content }}"
+          
+          # Get repository ID
+          REPO_ID=$(gh api graphql -f query='
+            query($owner: String!, $repo: String!) {
+              repository(owner: $owner, name: $repo) {
+                id
+              }
+            }
+          ' -f owner="${{ github.repository_owner }}" \
+            -f repo="${{ github.event.repository.name }}" \
+            --jq '.data.repository.id')
+          
+          # Create the discussion
+          RESULT=$(gh api graphql -f query='
+            mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+              createDiscussion(input: {
+                repositoryId: $repositoryId,
+                categoryId: $categoryId,
+                title: $title,
+                body: $body
+              }) {
+                discussion {
+                  id
+                  url
+                }
+              }
+            }
+          ' -f repositoryId="$REPO_ID" \
+            -f categoryId="$CATEGORY_ID" \
+            -f title="$TITLE" \
+            -f body="$BODY")
+          
+          DISCUSSION_ID=$(echo "$RESULT" | jq -r '.data.createDiscussion.discussion.id')
+          DISCUSSION_URL=$(echo "$RESULT" | jq -r '.data.createDiscussion.discussion.url')
+          
+          echo "Created discussion: $DISCUSSION_URL"
+          echo "discussion_id=$DISCUSSION_ID" >> "$GITHUB_OUTPUT"
+          echo "discussion_url=$DISCUSSION_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: steps.parse.outputs.has_review_spec == 'true'
+        run: |
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            echo "::notice::Discussion already exists for this spec - skipped creation (idempotent)"
+          else
+            echo "::notice::Created discussion: ${{ steps.create.outputs.discussion_url }}"
+          fi
+
+  auto-review:
+    name: Post AI Review Comment
+    runs-on: ubuntu-latest
+    needs: create-discussion
+    if: needs.create-discussion.outputs.has_review_spec == 'true' && needs.create-discussion.outputs.discussion_id != ''
+
+    steps:
+      - name: Check for Anthropic API key
+        id: check-key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::ANTHROPIC_API_KEY not configured - skipping auto-review"
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout code
+        if: steps.check-key.outputs.has_key == 'true'
+        uses: actions/checkout@v4
+
+      - name: Generate AI review
+        id: review
+        if: steps.check-key.outputs.has_key == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          SPEC_CONTENT="${{ needs.create-discussion.outputs.spec_content }}"
+          
+          # Prepare the prompt
+          SYSTEM_PROMPT="You are a technical reviewer for software specifications. Review the following spec and provide constructive feedback focusing on:
+          1. Clarity and completeness of acceptance criteria
+          2. Feasibility of the proposed approach
+          3. Potential edge cases or risks not addressed
+          4. Suggestions for improvement
+          
+          Keep your review concise (under 500 words) and actionable. Format as markdown."
+          
+          # Call Claude API
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -n \
+              --arg system "$SYSTEM_PROMPT" \
+              --arg content "Please review this specification:\n\n$SPEC_CONTENT" \
+              '{
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 1024,
+                system: $system,
+                messages: [{role: "user", content: $content}]
+              }')")
+          
+          # Extract the review text
+          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // empty')
+          
+          if [ -z "$REVIEW" ]; then
+            echo "::warning::Failed to generate AI review"
+            echo "$RESPONSE"
+            echo "has_review=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          # Save review to file for the next step
+          echo "$REVIEW" > /tmp/review.md
+          echo "has_review=true" >> "$GITHUB_OUTPUT"
+
+      - name: Post review comment
+        if: steps.check-key.outputs.has_key == 'true' && steps.review.outputs.has_review == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DISCUSSION_ID="${{ needs.create-discussion.outputs.discussion_id }}"
+          REVIEW=$(cat /tmp/review.md)
+          
+          COMMENT_BODY="## 🤖 Automated Spec Review
+          
+          *This review was automatically generated by Claude to help kickstart the discussion.*
+          
+          ---
+          
+          $REVIEW
+          
+          ---
+          
+          *Please note: This is an AI-generated review and may not catch all issues. Human review is still essential.*"
+          
+          # Post comment to discussion
+          gh api graphql -f query='
+            mutation($discussionId: ID!, $body: String!) {
+              addDiscussionComment(input: {
+                discussionId: $discussionId,
+                body: $body
+              }) {
+                comment {
+                  id
+                  url
+                }
+              }
+            }
+          ' -f discussionId="$DISCUSSION_ID" \
+            -f body="$COMMENT_BODY"
+          
+          echo "::notice::Posted AI review comment to discussion"
