@@ -1,11 +1,10 @@
 name: Spec Review
 
 on:
-  push:
+  pull_request:
     paths:
       - 'specs/*.md'
-    branches:
-      - '**'
+    types: [opened, synchronize]
 
 permissions:
   contents: read
@@ -24,14 +23,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2  # Need previous commit to detect changed files
 
       - name: Get changed spec files
         id: changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get list of changed spec files
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD -- 'specs/*.md' 2>/dev/null || git diff --name-only --diff-filter=A HEAD -- 'specs/*.md')
+          # Get list of changed spec files in this PR
+          CHANGED_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files --jq '.files[].path' | grep '^specs/.*\.md$' || echo "")
           {
             echo "files<<EOF"
             echo "$CHANGED_FILES"
