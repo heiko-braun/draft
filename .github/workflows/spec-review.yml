@@ -5,6 +5,7 @@ on:
     paths:
       - 'specs/*.md'
     types: [opened, synchronize]
+  workflow_dispatch:  # allows manual trigger for testing
 
 permissions:
   contents: read
