@@ -1,7 +1,7 @@
 name: Spec Review
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - 'specs/*.md'
     types: [opened, synchronize]
@@ -22,8 +22,10 @@ jobs:
       has_review_spec: ${{ steps.parse.outputs.has_review_spec }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get changed spec files
         id: changed
