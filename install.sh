@@ -60,7 +60,11 @@ if [ "$VERSION" = "latest" ]; then
 fi
 
 # Construct download URL
-ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.tar.gz"
+if [ "$OS" = "windows" ]; then
+    ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.zip"
+else
+    ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.tar.gz"
+fi
 DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/download/${VERSION}/${ARCHIVE_NAME}"
 
 echo "Installing Draft ${VERSION}..."
@@ -89,13 +93,20 @@ fi
 
 # Extract binary
 echo "Extracting draft..."
-tar -xzf "$TEMP_DIR/$ARCHIVE_NAME" -C "$TEMP_DIR"
+if [ "$OS" = "windows" ]; then
+    unzip -q "$TEMP_DIR/$ARCHIVE_NAME" -d "$TEMP_DIR"
+else
+    tar -xzf "$TEMP_DIR/$ARCHIVE_NAME" -C "$TEMP_DIR"
+fi
 
 # Move binary to install directory
-mv "$TEMP_DIR/draft" "$INSTALL_DIR/$BINARY_NAME"
-
-# Make binary executable
-chmod +x "$INSTALL_DIR/$BINARY_NAME"
+if [ "$OS" = "windows" ]; then
+    mv "$TEMP_DIR/draft.exe" "$INSTALL_DIR/$BINARY_NAME"
+else
+    mv "$TEMP_DIR/draft" "$INSTALL_DIR/$BINARY_NAME"
+    # Make binary executable
+    chmod +x "$INSTALL_DIR/$BINARY_NAME"
+fi
 
 echo "✓ Draft installed to $INSTALL_DIR/$BINARY_NAME"
 echo ""

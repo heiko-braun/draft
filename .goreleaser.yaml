@@ -13,12 +13,18 @@ builds:
     main: ./cmd/draft
     binary: draft
 
-    # macOS only for initial release
     goos:
       - darwin
+      - linux
+      - windows
     goarch:
       - amd64
       - arm64
+
+    # Exclude invalid combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
 
     # Inject version information at build time
     ldflags:
@@ -32,7 +38,9 @@ builds:
 
 archives:
   - id: default
-    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
