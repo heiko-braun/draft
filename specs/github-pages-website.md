@@ -21,15 +21,15 @@ Create a GitHub Pages website that helps external users discover draft, understa
 
 ## Approach
 
-Create static HTML/CSS files in a `/docs` directory (GitHub Pages standard location). Reuse the design system from `internal/cli/present.go` (Geist font, HSL color palette, minimal styling). Structure as a single-page site with sections for installation, usage, and workflow. Configure GitHub Pages to serve from `/docs` folder on main branch.
+Create static HTML/CSS files in a `/web` directory. Use modern blue color palette with Tailwind CSS CDN and Lucide icons. Structure as a single-page site with sections for installation, usage, and workflow. Configure GitHub Pages to serve from `/web` folder on main branch.
 
 ## Affected Modules
 
-- `/docs/index.html` — Main website file (new)
-- `/docs/styles.css` — Custom styles extracted from present command (new)
+- `/web/index.html` — Main website file (new)
+- `install.sh` — Installation script for ~/.local/bin (new)
 - `.github/` — May need GitHub Pages configuration or deployment workflow (new, if automated deployment needed)
 
-New module boundary: Website lives entirely in `/docs/`, independent of Go codebase. Styles are copied/adapted from present command but maintained separately.
+New module boundary: Website lives entirely in `/web/`, independent of Go codebase.
 
 ## Test Strategy
 
@@ -54,4 +54,4 @@ No automated tests required for static content.
 
 ## Notes
 
-GitHub Pages can be enabled in repository settings under "Pages" → Source: "Deploy from a branch" → Branch: "main" → Folder: "/docs".
+GitHub Pages can be enabled in repository settings under "Pages" → Source: "Deploy from a branch" → Branch: "main" → Folder: "/web".
