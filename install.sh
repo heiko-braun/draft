@@ -59,11 +59,14 @@ if [ "$VERSION" = "latest" ]; then
     fi
 fi
 
+# Strip 'v' prefix from version for archive name
+VERSION_NUMBER="${VERSION#v}"
+
 # Construct download URL
 if [ "$OS" = "windows" ]; then
-    ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.zip"
+    ARCHIVE_NAME="draft_${VERSION_NUMBER}_${OS}_${ARCH}.zip"
 else
-    ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.tar.gz"
+    ARCHIVE_NAME="draft_${VERSION_NUMBER}_${OS}_${ARCH}.tar.gz"
 fi
 DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/download/${VERSION}/${ARCHIVE_NAME}"
 
