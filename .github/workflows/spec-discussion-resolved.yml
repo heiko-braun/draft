@@ -1,0 +1,119 @@
+name: Spec Discussion Resolved
+
+on:
+  discussion:
+    types: [answered, closed]
+
+permissions:
+  discussions: read
+  pull-requests: write
+  contents: read
+
+jobs:
+  notify-pr:
+    name: Notify PR of Discussion Resolution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if discussion is a spec review
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DISCUSSION_TITLE="${{ github.event.discussion.title }}"
+          echo "Discussion title: $DISCUSSION_TITLE"
+
+          # Check if title matches [Spec Review] pattern
+          if [[ "$DISCUSSION_TITLE" =~ ^\[Spec\ Review\]\ (.+)$ ]]; then
+            SPEC_SLUG="${BASH_REMATCH[1]}"
+            echo "is_spec_review=true" >> "$GITHUB_OUTPUT"
+            echo "spec_slug=$SPEC_SLUG" >> "$GITHUB_OUTPUT"
+            echo "Detected spec review discussion for: $SPEC_SLUG"
+          else
+            echo "is_spec_review=false" >> "$GITHUB_OUTPUT"
+            echo "Not a spec review discussion - skipping"
+          fi
+
+      - name: Checkout code
+        if: steps.check.outputs.is_spec_review == 'true'
+        uses: actions/checkout@v4
+
+      - name: Find PR that modified this spec
+        id: find-pr
+        if: steps.check.outputs.is_spec_review == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          SPEC_SLUG="${{ steps.check.outputs.spec_slug }}"
+          SPEC_FILE="specs/${SPEC_SLUG}.md"
+
+          echo "Looking for PRs that modified: $SPEC_FILE"
+
+          # Find the most recent merged or open PR that touched this spec file
+          # Search both open and merged PRs
+          PR_NUMBER=$(gh pr list --state all --search "path:$SPEC_FILE" --json number,state,files --jq "
+            map(select(.files[].path == \"$SPEC_FILE\")) |
+            sort_by(.number) |
+            reverse |
+            .[0].number
+          " 2>/dev/null || echo "")
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::warning::No PR found that modified $SPEC_FILE"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "Found PR #$PR_NUMBER"
+          fi
+
+      - name: Comment on PR
+        if: steps.check.outputs.is_spec_review == 'true' && steps.find-pr.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ steps.find-pr.outputs.pr_number }}"
+          SPEC_SLUG="${{ steps.check.outputs.spec_slug }}"
+          DISCUSSION_URL="${{ github.event.discussion.html_url }}"
+          DISCUSSION_STATE="${{ github.event.discussion.state }}"
+          EVENT_TYPE="${{ github.event.action }}"
+
+          # Determine the status message
+          if [ "$EVENT_TYPE" = "answered" ]; then
+            STATUS_EMOJI="✅"
+            STATUS_TEXT="marked as answered"
+          elif [ "$EVENT_TYPE" = "closed" ]; then
+            STATUS_EMOJI="🔒"
+            STATUS_TEXT="closed"
+          else
+            STATUS_EMOJI="✓"
+            STATUS_TEXT="resolved"
+          fi
+
+          COMMENT="## ${STATUS_EMOJI} Spec Discussion Resolved
+
+The discussion for **$SPEC_SLUG** has been $STATUS_TEXT.
+
+🔗 **[View Discussion]($DISCUSSION_URL)**
+
+### Next Steps:
+- Review any final feedback from the discussion
+- This PR is now ready for final code review and approval
+- Ensure all acceptance criteria from the spec have been addressed
+
+---
+*This comment was automatically generated when the discussion was $STATUS_TEXT*"
+
+          gh pr comment "$PR_NUMBER" --body "$COMMENT"
+          echo "::notice::Posted resolution comment to PR #$PR_NUMBER"
+
+      - name: Summary
+        if: steps.check.outputs.is_spec_review == 'true'
+        run: |
+          if [ "${{ steps.find-pr.outputs.found }}" = "true" ]; then
+            echo "::notice::Notified PR #${{ steps.find-pr.outputs.pr_number }} of discussion resolution"
+          else
+            echo "::notice::No associated PR found for spec: ${{ steps.check.outputs.spec_slug }}"
+          fi
