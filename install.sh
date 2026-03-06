@@ -42,7 +42,11 @@ case "$ARCH" in
         ;;
 esac
 
-DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/${VERSION}/download/draft-${OS}-${ARCH}"
+if [ "$VERSION" = "latest" ]; then
+    DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/latest/download/draft-${OS}-${ARCH}"
+else
+    DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/download/${VERSION}/draft-${OS}-${ARCH}"
+fi
 if [ "$OS" = "windows" ]; then
     DOWNLOAD_URL="${DOWNLOAD_URL}.exe"
 fi
