@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draft - Shape how AI codes</title>
+    <meta name="description" content="Community-driven framework for spec-driven development with AI assistants">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blue-900': '#031A2D',
+                        'blue-800': '#134470',
+                        'blue-600': '#2C78BA',
+                        'gray-400': '#B0B7BA',
+                        'gray-200': '#E6EAED',
+                        border: '#B0B7BA',
+                        input: '#B0B7BA',
+                        ring: '#2C78BA',
+                        background: '#FFFFFF',
+                        foreground: '#031A2D',
+                        primary: {
+                            DEFAULT: '#2C78BA',
+                            foreground: '#FFFFFF',
+                        },
+                        secondary: {
+                            DEFAULT: '#134470',
+                            foreground: '#FFFFFF',
+                        },
+                        muted: {
+                            DEFAULT: '#E6EAED',
+                            foreground: '#134470',
+                        },
+                        accent: {
+                            DEFAULT: '#E6EAED',
+                            foreground: '#031A2D',
+                        },
+                        card: {
+                            DEFAULT: '#FFFFFF',
+                            foreground: '#031A2D',
+                        },
+                    },
+                    borderRadius: {
+                        lg: '0.625rem',
+                        md: 'calc(0.625rem - 2px)',
+                        sm: 'calc(0.625rem - 4px)',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .copy-button {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .code-container:hover .copy-button {
+            opacity: 1;
+        }
+    </style>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show feedback
+                const button = event.target.closest('button');
+                const originalContent = button.innerHTML;
+                button.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                `;
+                setTimeout(() => {
+                    button.innerHTML = originalContent;
+                }, 2000);
+            });
+        }
+    </script>
+</head>
+<body class="bg-background text-foreground antialiased">
+    <!-- Header -->
+    <header class="mb-16 text-center py-12">
+        <div class="container mx-auto px-6 lg:px-8">
+            <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Draft</h1>
+            <p class="mt-4 text-xl text-muted-foreground">Shape how AI codes</p>
+            <p class="mt-2 text-muted-foreground">A lightweight framework for spec-driven development with Claude Code and other AI coding assistants.</p>
+            <div class="mt-8 flex justify-center gap-4">
+                <a href="#install" class="inline-flex items-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                    Get Started
+                </a>
+                <a href="#contribute" class="inline-flex items-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
+                    Contribute
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mission -->
+        <section class="mb-16 py-12 bg-accent mx-4 lg:mx-8 rounded-lg">
+            <div class="mx-auto px-6 lg:px-8">
+                <div class="mx-auto max-w-3xl">
+                    <h2 class="text-2xl font-bold mb-4">The Mission</h2>
+                    <p class="text-muted-foreground">AI assistants need better workflows. We're building them together.</p>
+                    <p class="mt-4">Draft is a <strong>community-driven framework</strong> that teaches AI assistants to ask questions, create specs, and verify implementations before jumping to code.</p>
+                    <p class="mt-4 font-semibold">Help us define best practices for agentic coding.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workflow -->
+        <section class="mb-16 py-4">
+            <div class="container mx-auto px-6 lg:px-8">
+                <h2 class="mb-4 text-center text-2xl font-bold">The Workflow</h2>
+                <p class="mb-8 text-center text-muted-foreground">Spec-driven development workflow encoded as reusable skills</p>
+                <div class="mx-auto max-w-2xl space-y-4">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">/spec</h3>
+                            <p class="text-muted-foreground">Clarify requirements, check scope, create spec</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                            <i data-lucide="code" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">/implement</h3>
+                            <p class="text-muted-foreground">Assess blast radius, build as vertical slice</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">/verify-spec</h3>
+                            <p class="text-muted-foreground">Verify implementation matches spec</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg">/refine</h3>
+                            <p class="text-muted-foreground">Refine existing spec at any point in time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Get Started -->
+        <section id="install" class="mb-16 py-12 bg-accent mx-4 lg:mx-8 rounded-lg">
+            <div class="mx-auto px-6 lg:px-8">
+                <h2 class="mb-8 text-center text-2xl font-bold">Get Started</h2>
+                <div class="mx-auto max-w-2xl">
+                <div class="rounded-lg border bg-card p-6 mb-6">
+                    <h3 class="mb-4 font-semibold">Quick Install</h3>
+                    <div class="code-container relative">
+                        <pre class="rounded-md bg-white border border-gray-400 p-4 pr-12 overflow-x-auto"><code class="text-sm">curl -fsSL https://raw.githubusercontent.com/heiko-braun/draft/main/install.sh | bash</code></pre>
+                        <button onclick="copyToClipboard('curl -fsSL https://raw.githubusercontent.com/heiko-braun/draft/main/install.sh | bash')" class="copy-button absolute top-2 right-2 p-2 rounded-md bg-background border border-input hover:bg-accent transition-colors" title="Copy to clipboard">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="mt-4 text-center text-sm text-muted-foreground">Installs to <code class="rounded bg-muted px-2 py-0.5">~/.local/bin</code> and configures PATH for bash and zsh</p>
+                </div>
+
+                <details class="rounded-lg border bg-card">
+                    <summary class="cursor-pointer p-4 font-semibold hover:bg-accent">
+                        Other Installation Methods
+                    </summary>
+                    <div class="border-t p-4 space-y-4">
+                        <div>
+                            <h4 class="mb-2 font-medium text-sm">Using Go</h4>
+                            <pre class="rounded bg-muted p-2 text-xs overflow-x-auto"><code>go install github.com/heiko-braun/draft/cmd/draft@latest</code></pre>
+                        </div>
+                        <div>
+                            <h4 class="mb-2 font-medium text-sm">Manual Download</h4>
+                            <p class="text-xs text-muted-foreground mb-2">Download pre-built binaries from <a href="https://github.com/heiko-braun/draft/releases" class="text-primary hover:underline">releases</a></p>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <div class="text-xs">
+                                    <span class="font-medium">macOS (Intel):</span> draft-darwin-amd64
+                                </div>
+                                <div class="text-xs">
+                                    <span class="font-medium">macOS (ARM):</span> draft-darwin-arm64
+                                </div>
+                                <div class="text-xs">
+                                    <span class="font-medium">Linux:</span> draft-linux-amd64
+                                </div>
+                                <div class="text-xs">
+                                    <span class="font-medium">Windows:</span> draft-windows-amd64.exe
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Usage -->
+        <section class="mb-16 py-4">
+            <h2 class="mb-8 text-center text-2xl font-bold">Quick Start</h2>
+            <div class="mx-auto max-w-2xl space-y-4">
+                <div class="rounded-lg border bg-card p-6">
+                    <h3 class="mb-3 font-semibold">1. Initialize Your Project</h3>
+                    <pre class="rounded-md bg-muted p-4 overflow-x-auto"><code class="text-sm">draft init              # Claude Code & Cursor
+draft init --agent claude   # Claude Code only
+draft init --agent cursor   # Cursor only</code></pre>
+                </div>
+                <div class="rounded-lg border bg-card p-6">
+                    <h3 class="mb-3 font-semibold">2. Use the Skills</h3>
+                    <pre class="rounded-md bg-muted p-4 overflow-x-auto"><code class="text-sm">/spec Add user authentication
+/implement authentication
+/verify-spec authentication
+/refine authentication</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Present Specs -->
+        <section class="mb-16 py-12 bg-accent mx-4 lg:mx-8 rounded-lg">
+            <div class="mx-auto px-6 lg:px-8">
+                <div class="mx-auto max-w-2xl">
+                    <h2 class="mb-4 text-2xl font-bold">Share & Discuss</h2>
+                    <p class="mb-6 text-muted-foreground">
+                        View all specs in a web interface for screensharing and discussion with peers.
+                    </p>
+                    <div class="rounded-lg border bg-card p-6">
+                        <pre class="rounded-md bg-white border border-gray-400 p-4 overflow-x-auto"><code class="text-sm">draft present</code></pre>
+                        <p class="mt-4 text-sm text-muted-foreground">Opens a browser with rendered specs, table of contents, and metadata—perfect for team reviews and walkthroughs.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contribute -->
+        <section id="contribute" class="mb-16 py-4">
+            <div class="mx-auto max-w-2xl">
+                <h2 class="mb-4 text-2xl font-bold">Contribute</h2>
+                <p class="text-muted-foreground">
+                    The workflows are defined in markdown files at <code class="rounded bg-muted px-2 py-1 text-sm">.claude/commands/</code> and <code class="rounded bg-muted px-2 py-1 text-sm">.cursor/skills/</code>.
+                    Test them, shape the details, share learnings.
+                </p>
+                <div class="mt-6">
+                    <a href="https://github.com/heiko-braun/draft" class="inline-flex items-center text-primary hover:underline font-medium">
+                        View on GitHub →
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    <!-- Footer -->
+    <footer class="border-t pt-8 text-center text-sm text-muted-foreground">
+        <div class="container mx-auto px-6 lg:px-8">
+            <p>
+                <a href="https://github.com/heiko-braun/draft" class="hover:text-foreground">GitHub</a>
+                <span class="mx-2">•</span>
+                <a href="https://github.com/heiko-braun/draft/issues" class="hover:text-foreground">Discussions</a>
+                <span class="mx-2">•</span>
+                <span>Apache 2.0</span>
+            </p>
+            <p class="mt-2">Built by engineers, for engineers. Let's shape agentic coding together.</p>
+        </div>
+    </footer>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,133 +1,90 @@
 # Draft
 
-**Draft your specs before you code** - a specification-driven development workflow for AI assistants.
+**Shape how AI codes**
 
-A lightweight framework for spec-driven development with Claude Code and other AI coding assistants. Define requirements clearly, get explicit confirmation, then implement with checkpoints.
+A lightweight framework for spec-driven development with Claude Code and other AI coding assistants.
 
-## Why Spec-Driven?
+## The Mission
 
-When working with AI assistants on non-trivial features, jumping straight to code often leads to:
-- Misunderstood requirements
-- Wasted implementation effort
-- Features that miss the mark
+AI assistants need better workflows. We're building them together.
 
-This framework adds a **specification phase** before implementation, ensuring alignment between what you want and what gets built.
+Draft is a **community-driven framework** that teaches AI assistants to ask questions, create specs, and verify implementations before jumping to code.
 
-## How It Works
+**Help us define best practices for agentic coding.**
 
-```mermaid
-flowchart TD
-    A["/spec {feature description}"] --> B["1. CLARIFY Questions<br/>Ask 3-5 questions one at a time<br/>to understand requirements"]
-    B --> B2["1.5. SCOPE CHECK<br/>Verify feature is small enough<br/>for a single vertical slice"]
-    B2 --> C["2. SPEC Document<br/>Write lightweight spec to<br/>specs/{feature}.md"]
-    C --> D["3. CONFIRM Approval<br/>Get explicit user approval<br/>before any implementation"]
-    D --> E["/implement {feature}"]
-    E --> F["4. BUILD as Vertical Slice<br/>Implement as one integrated piece<br/>with continuous testing"]
-```
+## The Workflow
+
+Spec-driven development workflow encoded as reusable skills:
+
+1. **`/spec`** - Clarify requirements, check scope, create spec
+2. **`/implement`** - Assess blast radius, build as vertical slice
+3. **`/verify-spec`** - Verify implementation matches spec
+4. **`/refine`** - Refine existing spec at any point in time
 
 ## Installation
 
-### Using the CLI Tool (Recommended)
+### Quick Install
 
-Install via Go:
+```bash
+curl -fsSL https://raw.githubusercontent.com/heiko-braun/draft/main/install.sh | bash
+```
 
+Installs to `~/.local/bin` and configures PATH for bash and zsh.
+
+### Other Installation Methods
+
+**Using Go:**
 ```bash
 go install github.com/heiko-braun/draft/cmd/draft@latest
 ```
 
-Or download pre-built binaries from the [releases page](https://github.com/heiko-braun/draft/releases):
+**Manual Download:**
 
-**macOS (Intel):**
-```bash
-curl -L https://github.com/heiko-braun/draft/releases/latest/download/draft-darwin-amd64 -o draft
-chmod +x draft
-sudo mv draft /usr/local/bin/
-```
+Download pre-built binaries from [releases](https://github.com/heiko-braun/draft/releases):
 
-**macOS (Apple Silicon):**
-```bash
-curl -L https://github.com/heiko-braun/draft/releases/latest/download/draft-darwin-arm64 -o draft
-chmod +x draft
-sudo mv draft /usr/local/bin/
-```
+- **macOS (Intel)**: `draft-darwin-amd64`
+- **macOS (ARM)**: `draft-darwin-arm64`
+- **Linux**: `draft-linux-amd64`
+- **Windows**: `draft-windows-amd64.exe`
 
-Then bootstrap your project:
+See [install.sh](install.sh) for the installation script source.
+
+## Quick Start
+
+### 1. Initialize Your Project
 
 ```bash
-cd /path/to/your/project
-draft init
-
-# Initialize for Claude only
-draft init --agent claude
-
-# Initialize for Cursor only
-draft init --agent cursor
-
-# Initialize for both (default)
-draft init
+draft init              # Claude Code & Cursor
+draft init --agent claude   # Claude Code only
+draft init --agent cursor   # Cursor only
 ```
 
-### Manual Installation
-
-Copy the `.claude/` directory to your project:
-
-```bash
-cp -r .claude/ /path/to/your/project/
-```
-
-## Usage
-
-### CLI Tool
-
-The `draft` CLI helps you bootstrap the spec-driven workflow into any repository:
-
-```bash
-# Initialize for both Claude and Cursor (default)
-draft init
-
-# Initialize for Claude Code only
-draft init --agent claude
-
-# Initialize for Cursor only
-draft init --agent cursor
-
-# Initialize in specific directory
-draft init /path/to/project
-
-# Overwrite existing files
-draft init --force
-
-# Check version
-draft --version
-```
-
-The `--agent` flag determines which AI coding assistant format to use:
-- **`--agent claude`**: Creates `.claude/commands/` with Claude Code slash commands
-- **`--agent cursor`**: Creates `.cursor/skills/` with Cursor-compatible skills
-- **No flag**: Creates both formats (default)
-
-If files already exist, the CLI will warn you and exit. Use `--force` to overwrite them.
-
-### Start a Feature
+### 2. Use the Skills
 
 ```
-/spec Add user authentication with OAuth support
-```
-
-Claude will:
-1. Ask clarifying questions one at a time
-2. Create a spec in `specs/` based on your answers
-3. Ask for confirmation
-
-Once confirmed, implement it:
-
-```
+/spec Add user authentication
 /implement authentication
+/verify-spec authentication
+/refine authentication
 ```
 
-This loads the spec and builds in phases with checkpoints between each.
+## Share & Discuss
 
-### Spec Format
+View all specs in a web interface for screensharing and discussion with peers:
+
+```bash
+draft present
+```
+
+Opens a browser with rendered specs, table of contents, and metadata—perfect for team reviews and walkthroughs.
+
+## Contribute
+
+The workflows are defined in markdown files at `.claude/commands/` and `.cursor/skills/`. Test them, shape the details, share learnings.
+
+[View on GitHub](https://github.com/heiko-braun/draft) →
+
+## Spec Format
 
 Specs are stored in `/specs/` with this structure:
 
@@ -261,12 +218,6 @@ Updates an existing specification while preserving progress.
 - Scope is expanding significantly
 - Core goals have completely changed
 
-## Benefits
-
-- **Alignment**: Ensure you and Claude agree on what's being built
-- **Control**: Pause points let you review, adjust, or stop
-- **Documentation**: Specs serve as lightweight feature docs
-- **Resumability**: Interrupted work can be continued from where you left off
 
 ## Development
 
