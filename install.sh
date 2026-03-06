@@ -42,16 +42,28 @@ case "$ARCH" in
         ;;
 esac
 
+# Get latest version tag if using 'latest'
 if [ "$VERSION" = "latest" ]; then
-    DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/latest/download/draft-${OS}-${ARCH}"
-else
-    DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/download/${VERSION}/draft-${OS}-${ARCH}"
-fi
-if [ "$OS" = "windows" ]; then
-    DOWNLOAD_URL="${DOWNLOAD_URL}.exe"
+    if command -v curl >/dev/null 2>&1; then
+        VERSION=$(curl -fsSL https://api.github.com/repos/heiko-braun/draft/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    elif command -v wget >/dev/null 2>&1; then
+        VERSION=$(wget -qO- https://api.github.com/repos/heiko-braun/draft/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    else
+        echo "Error: curl or wget is required to download draft"
+        exit 1
+    fi
+
+    if [ -z "$VERSION" ]; then
+        echo "Error: Could not determine latest version"
+        exit 1
+    fi
 fi
 
-echo "Installing Draft..."
+# Construct download URL
+ARCHIVE_NAME="draft_${VERSION}_${OS}_${ARCH}.tar.gz"
+DOWNLOAD_URL="https://github.com/heiko-braun/draft/releases/download/${VERSION}/${ARCHIVE_NAME}"
+
+echo "Installing Draft ${VERSION}..."
 echo "  OS: $OS"
 echo "  Architecture: $ARCH"
 echo "  Install directory: $INSTALL_DIR"
@@ -60,21 +72,30 @@ echo ""
 # Create install directory if it doesn't exist
 mkdir -p "$INSTALL_DIR"
 
-# Download binary
+# Create temp directory
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Download and extract archive
 echo "Downloading draft..."
 if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$BINARY_NAME"
+    curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_DIR/$ARCHIVE_NAME"
 elif command -v wget >/dev/null 2>&1; then
-    wget -q "$DOWNLOAD_URL" -O "$INSTALL_DIR/$BINARY_NAME"
+    wget -q "$DOWNLOAD_URL" -O "$TEMP_DIR/$ARCHIVE_NAME"
 else
     echo "Error: curl or wget is required to download draft"
     exit 1
 fi
 
-# Make binary executable (not needed on Windows)
-if [ "$OS" != "windows" ]; then
-    chmod +x "$INSTALL_DIR/$BINARY_NAME"
-fi
+# Extract binary
+echo "Extracting draft..."
+tar -xzf "$TEMP_DIR/$ARCHIVE_NAME" -C "$TEMP_DIR"
+
+# Move binary to install directory
+mv "$TEMP_DIR/draft" "$INSTALL_DIR/$BINARY_NAME"
+
+# Make binary executable
+chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
 echo "✓ Draft installed to $INSTALL_DIR/$BINARY_NAME"
 echo ""
