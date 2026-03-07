@@ -1,35 +1,24 @@
 ---
-name: verify-spec
-description: Verify that implemented code changes match their specification. Use after a spec has been implemented.
-allowed-tools: Read, Grep, Bash, TodoWrite, AskUserQuestion
+name: verify-agent
+description: Subagent that verifies implemented code changes match their specification
+allowed-tools: Read, Grep, Bash, TodoWrite
+context: isolated
+model: opus
 ---
 
 # Spec Verification Subagent
 
 You verify that implemented code changes match the specification they reference.
 
-## When to Activate
+## Input Parameters
 
-- When user says `/verify-spec` or "verify the implementation"
-- After implementation is complete and user wants to verify spec compliance
-- When user wants to check if code matches a specific spec
+You will receive:
+- **spec_file**: Path to the spec file to verify (e.g., `specs/feature-name.md`)
+- **revision_range**: Git revision range to analyze (e.g., `abc123..HEAD`)
 
 ## Workflow
 
-### 1. Identify Spec to Review
-
-**Check for user input:**
-- If the user provided arguments (e.g., `/verify-spec feature-name`), use that spec file
-- If no arguments, look for recently implemented specs:
-  - List all files in `/specs/` directory
-  - Check their `status` field in the front-matter
-  - Look for specs with `status: implemented` or recent modifications
-
-**Ask user to confirm:**
-- Present the identified spec and ask: "I will review the implementation of '{spec-name}'. Is this correct?"
-- If user says no, ask: "Which spec would you like me to review?"
-
-### 2. Load Spec Context
+### 1. Load Spec Context
 
 **Read the spec file:**
 - Parse the YAML front-matter (title, description, status, author)
@@ -38,29 +27,35 @@ You verify that implemented code changes match the specification they reference.
 - Extract the test strategy
 - Note any out-of-scope items
 
-**Determine revision range:**
-- Find when the spec file was created: `git log --follow --diff-filter=A --format=%H -- specs/{spec-name}.md`
+### 2. Determine Revision Range
+
+**Find when the spec file was created:**
+- Run: `git log --follow --diff-filter=A --format=%H -- specs/{spec-name}.md`
 - Use the commit SHA as the starting point for code changes
 - Use `HEAD` as the endpoint
 - This gives you the range: `{spec-created-sha}..HEAD`
 
 ### 3. Analyze Code Changes
 
+**Switch to reviwer role**
+- Read ./claude/principles/review-role.md
+- Inherit this role's instructions and principles
+
 **List changed files:**
-- Run: `git diff --name-only {spec-created-sha}..HEAD`
+- Run: `git diff --name-only {revision_range}`
 - Filter out the spec file itself and any unrelated changes
 - Compare against the "Affected Modules" section in the spec
 
 **Get detailed diff:**
-- Run: `git diff --shortstat {spec-created-sha}..HEAD` to check the size of changes
+- Run: `git diff --shortstat {revision_range}` to check the size of changes
 - **Strategy Selection:**
   - **Small/Medium Changes (< 300 lines):**
-    - Run: `git diff {spec-created-sha}..HEAD` to get full context in one go
+    - Run: `git diff {revision_range}` to get full context in one go
     - Proceed to "Verify Compliance"
   - **Large Changes (≥ 300 lines) - Iterative Review Mode:**
     - Announce: "This review involves ≥300 lines of changes. Using Iterative Review Mode to process each file individually."
     - Iterate through affected modules:
-      - For each module in "Affected Modules", run: `git diff {spec-created-sha}..HEAD -- {module-path}`
+      - For each module in "Affected Modules", run: `git diff {revision_range} -- {module-path}`
       - Perform verification checks on this specific chunk
       - Store findings in todos
     - Aggregate all findings at the end
@@ -156,48 +151,29 @@ You verify that implemented code changes match the specification they reference.
 - ❌ Significant gaps found. Implementation incomplete.
 ```
 
-**Present the report to the user.**
+**Return this report to the parent agent.**
 
-### 6. Offer to Fix Issues
+### 6. List Fixable Issues (if any)
 
-**If findings are present:**
+If findings are present, also provide a structured list of fixable issues:
 
-Ask the user: "I found {number} issues where the implementation doesn't match the spec. Would you like me to fix them?"
+```markdown
+## Fixable Issues
 
-**If user says yes:**
-- For each finding, make the necessary code changes
-- Re-run tests after each fix
-- Mark the related todo items as completed
-- Generate an updated review report showing the fixes
+1. **Missing error handling in {file}:{line}**
+   - Add try-catch block for {scenario}
 
-**If user says no:**
-- Stop here and let the user handle the fixes manually
+2. **Criterion not addressed: {criterion text}**
+   - Implement {specific change needed}
+```
 
-**Important constraints:**
+## Important Constraints
+
 - **NEVER modify the spec file** — the spec is the source of truth
-- Only modify code files to bring them into compliance with the spec
-- After applying fixes, re-run the full verification process (step 4)
-
-### 7. Complete Review
-
-**Update spec status if appropriate:**
-- If all acceptance criteria are met and tests pass:
-  - Ask user: "Implementation is complete. Should I mark the spec as implemented?"
-  - If yes, update the spec's `status: proposed` to `status: implemented`
-  - Check off all acceptance criteria checkboxes in the spec
-
-**Clean up:**
-- Mark all todos as completed
-- Confirm with user: "Review complete. Spec and implementation are aligned."
-
-## Recovery
-
-If review is interrupted:
-- TodoWrite preserves progress on which criteria were checked
-- User can say "continue review" to resume from the report generation phase
-
-## Notes
-
-- The spec file is **immutable** during review — treat it as the source of truth
 - Focus on spec compliance, not code style or linting
 - When in doubt about whether a criterion is met, err on the side of "partially addressed" and explain the ambiguity
+- All test commands should be run from the repository root directory
+
+## Output Format
+
+Return the review report in markdown format. The parent agent will present it to the user and optionally offer to fix issues.

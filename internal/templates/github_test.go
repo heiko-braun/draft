@@ -21,13 +21,14 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 		{"claude spec command", "heiko-braun-draft-abc123/.claude/commands/spec.md", true},
 		{"claude implement command", "heiko-braun-draft-abc123/.claude/commands/implement.md", true},
 		{"claude refine command", "heiko-braun-draft-abc123/.claude/commands/refine.md", true},
-		{"claude verify-spec command", "heiko-braun-draft-abc123/.claude/commands/verify-spec.md", true},
+		{"claude verify command", "heiko-braun-draft-abc123/.claude/commands/verify.md", true},
+		{"claude verify agent", "heiko-braun-draft-abc123/.claude/agents/verify-agent.md", true},
 
 		// Cursor skills - should all be extracted
 		{"cursor spec skill", "heiko-braun-draft-abc123/.cursor/skills/spec/SKILL.md", true},
 		{"cursor implement skill", "heiko-braun-draft-abc123/.cursor/skills/implement/SKILL.md", true},
 		{"cursor refine skill", "heiko-braun-draft-abc123/.cursor/skills/refine/SKILL.md", true},
-		{"cursor verify-spec skill", "heiko-braun-draft-abc123/.cursor/skills/verify-spec/SKILL.md", true},
+		{"cursor verify skill", "heiko-braun-draft-abc123/.cursor/skills/verify/SKILL.md", true},
 
 		// Template files - should be extracted
 		{"specs TEMPLATE.md", "heiko-braun-draft-abc123/specs/TEMPLATE.md", true},
@@ -77,8 +78,9 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 // This test would have caught the bug where verify-spec was missing
 func TestVerifySpecIncluded(t *testing.T) {
 	requiredFiles := []string{
-		".claude/commands/verify-spec.md",
-		".cursor/skills/verify-spec/SKILL.md",
+		".claude/commands/verify.md",
+		".claude/agents/verify-agent.md",
+		".cursor/skills/verify/SKILL.md",
 	}
 
 	for _, filePath := range requiredFiles {
@@ -163,11 +165,12 @@ func extractFromTarball(tarballData []byte) (fs.FS, error) {
 		".claude/commands/spec.md",
 		".claude/commands/implement.md",
 		".claude/commands/refine.md",
-		".claude/commands/verify-spec.md",
+		".claude/commands/verify.md",
+		".claude/agents/verify-agent.md",
 		".cursor/skills/spec/SKILL.md",
 		".cursor/skills/implement/SKILL.md",
 		".cursor/skills/refine/SKILL.md",
-		".cursor/skills/verify-spec/SKILL.md",
+		".cursor/skills/verify/SKILL.md",
 		".cursor/specs/TEMPLATE.md",
 		"specs/TEMPLATE.md",
 		".claude/specs/TEMPLATE.md",

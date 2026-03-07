@@ -38,7 +38,7 @@ The review logic will be implemented as instructions in the command file, levera
 
 ## Affected Modules
 
-- `.claude/commands/verify-spec.md` — new slash command file defining the review workflow
+- `.claude/commands/verify.md` — new slash command file defining the review workflow
 - No changes to existing command files or spec template
 
 The change is fully contained within a new command file. No shared code is modified.

@@ -1,5 +1,5 @@
 ---
-name: verify-spec
+name: verify
 description: Verify that implemented code changes match their specification. Use after a spec has been implemented.
 ---
 
@@ -9,7 +9,7 @@ You verify that implemented code changes match the specification they reference.
 
 ## When to Activate
 
-- When user says `/verify-spec` or "verify the implementation"
+- When user says `/verify` or "verify the implementation"
 - After implementation is complete and user wants to verify spec compliance
 - When user wants to check if code matches a specific spec
 
@@ -18,7 +18,7 @@ You verify that implemented code changes match the specification they reference.
 ### 1. Identify Spec to Review
 
 **Check for user input:**
-- If the user provided arguments (e.g., `/verify-spec feature-name`), use that spec file
+- If the user provided arguments (e.g., `/verify feature-name`), use that spec file
 - If no arguments, look for recently implemented specs:
   - List all files in `/specs/` directory
   - Check their `status` field in the front-matter
