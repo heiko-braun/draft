@@ -34,7 +34,7 @@ If the blast radius is wider than expected, flag it: *"This will touch N modules
 
 Implement the spec as **one integrated piece** — types, logic, wiring, and tests together. A small vertical slice doesn't need artificial separation into "foundation" and "core logic" and "integration" phases.
 
-Important: Follow the design principles outlined in ./claude/principles/design-principles.md
+Important: Follow the design principles outlined in .principles/design-principles.md
 
 Use TodoWrite to track progress against the spec's acceptance criteria.
 

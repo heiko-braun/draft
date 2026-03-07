@@ -37,8 +37,8 @@ You will receive:
 
 ### 3. Analyze Code Changes
 
-**Switch to reviwer role**
-- Read ./claude/principles/review-role.md
+**Switch to reviewer role**
+- Read .principles/review-role.md
 - Inherit this role's instructions and principles
 
 **List changed files:**
