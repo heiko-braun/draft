@@ -29,6 +29,7 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 		{"cursor implement skill", "heiko-braun-draft-abc123/.cursor/skills/implement/SKILL.md", true},
 		{"cursor refine skill", "heiko-braun-draft-abc123/.cursor/skills/refine/SKILL.md", true},
 		{"cursor verify skill", "heiko-braun-draft-abc123/.cursor/skills/verify/SKILL.md", true},
+		{"cursor verify agent", "heiko-braun-draft-abc123/.cursor/agents/verify-agent.md", true},
 
 		// Template files - should be extracted
 		{"specs TEMPLATE.md", "heiko-braun-draft-abc123/specs/TEMPLATE.md", true},
@@ -85,6 +86,7 @@ func TestVerifySpecIncluded(t *testing.T) {
 		".claude/commands/verify.md",
 		".claude/agents/verify-agent.md",
 		".cursor/skills/verify/SKILL.md",
+		".cursor/agents/verify-agent.md",
 	}
 
 	for _, filePath := range requiredFiles {
@@ -175,6 +177,7 @@ func extractFromTarball(tarballData []byte) (fs.FS, error) {
 		".cursor/skills/implement/SKILL.md",
 		".cursor/skills/refine/SKILL.md",
 		".cursor/skills/verify/SKILL.md",
+		".cursor/agents/verify-agent.md",
 		".cursor/specs/TEMPLATE.md",
 		".principles/design-principles.md",
 		".principles/review-role.md",

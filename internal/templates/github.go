@@ -179,6 +179,7 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 			".cursor/skills/implement/SKILL.md",
 			".cursor/skills/refine/SKILL.md",
 			".cursor/skills/verify/SKILL.md",
+			".cursor/agents/verify-agent.md",
 			".cursor/specs/TEMPLATE.md",
 			".principles/design-principles.md",
 			".principles/review-role.md",
