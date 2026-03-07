@@ -18,6 +18,7 @@ clean:
 	rm -rf bin/
 	rm -rf cmd/draft/templates/.claude/
 	rm -rf cmd/draft/templates/.cursor/
+	rm -rf cmd/draft/templates/.principles/
 	rm -rf cmd/draft/templates/specs/
 
 test:

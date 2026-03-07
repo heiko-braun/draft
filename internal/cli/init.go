@@ -109,15 +109,18 @@ func runInit(cmd *cobra.Command, args []string) error {
 			dirs = append(dirs, ".cursor/")
 		}
 	}
-	dirs = append(dirs, "specs/")
+	dirs = append(dirs, "specs/", ".principles/")
 
 	dirsMsg := ""
 	if len(dirs) == 1 {
 		dirsMsg = dirs[0]
 	} else if len(dirs) == 2 {
 		dirsMsg = dirs[0] + " and " + dirs[1]
-	} else {
+	} else if len(dirs) == 3 {
 		dirsMsg = dirs[0] + ", " + dirs[1] + " and " + dirs[2]
+	} else {
+		// For 4 directories
+		dirsMsg = dirs[0] + ", " + dirs[1] + ", " + dirs[2] + " and " + dirs[3]
 	}
 
 	fmt.Printf("Successfully created %d files in %s\n", total, dirsMsg)
@@ -226,8 +229,12 @@ func findConflicts(targetDir string, agents []string) ([]string, error) {
 		}
 	}
 
-	// specs/TEMPLATE.md is always checked
-	filesToCheck = append(filesToCheck, "specs/TEMPLATE.md")
+	// specs/TEMPLATE.md and .principles files are always checked
+	filesToCheck = append(filesToCheck,
+		"specs/TEMPLATE.md",
+		".principles/design-principles.md",
+		".principles/review-role.md",
+	)
 
 	for _, file := range filesToCheck {
 		fullPath := filepath.Join(targetDir, file)
@@ -244,7 +251,7 @@ func copyTemplates(targetDir string, conflicts []string, templatesFS fs.FS, agen
 	var filesOverwritten []string
 
 	// Build list of roots to copy based on agents
-	roots := []string{"specs"} // Always include specs
+	roots := []string{"specs", ".principles"} // Always include specs and principles
 
 	for _, agent := range agents {
 		switch agent {

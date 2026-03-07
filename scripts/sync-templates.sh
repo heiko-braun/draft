@@ -13,23 +13,34 @@ CURSOR_SOURCE_DIR="$PROJECT_ROOT/.cursor"
 CURSOR_DEST_DIR="$PROJECT_ROOT/cmd/draft/templates/.cursor"
 SPECS_SOURCE_DIR="$PROJECT_ROOT/specs"
 SPECS_DEST_DIR="$PROJECT_ROOT/cmd/draft/templates/specs"
+PRINCIPLES_SOURCE_DIR="$PROJECT_ROOT/.principles"
+PRINCIPLES_DEST_DIR="$PROJECT_ROOT/cmd/draft/templates/.principles"
 
-echo "Syncing templates from .claude/, .cursor/, and specs/ to cmd/draft/templates/..."
+echo "Syncing templates from .claude/, .cursor/, .principles/, and specs/ to cmd/draft/templates/..."
 
 # Clean destination directories
 rm -rf "$CLAUDE_DEST_DIR"
 rm -rf "$CURSOR_DEST_DIR"
 rm -rf "$SPECS_DEST_DIR"
+rm -rf "$PRINCIPLES_DEST_DIR"
 
 # Create destination directories
 mkdir -p "$CLAUDE_DEST_DIR/commands"
+mkdir -p "$CLAUDE_DEST_DIR/agents"
 mkdir -p "$CURSOR_DEST_DIR"
 mkdir -p "$SPECS_DEST_DIR"
+mkdir -p "$PRINCIPLES_DEST_DIR"
 
 # Copy all Claude command files
 if [ -d "$CLAUDE_SOURCE_DIR/commands" ]; then
     cp "$CLAUDE_SOURCE_DIR/commands"/*.md "$CLAUDE_DEST_DIR/commands/" 2>/dev/null || true
     echo "  ✓ Copied Claude commands: $(ls -1 "$CLAUDE_SOURCE_DIR/commands"/*.md 2>/dev/null | wc -l | tr -d ' ') files"
+fi
+
+# Copy all Claude agent files
+if [ -d "$CLAUDE_SOURCE_DIR/agents" ]; then
+    cp "$CLAUDE_SOURCE_DIR/agents"/*.md "$CLAUDE_DEST_DIR/agents/" 2>/dev/null || true
+    echo "  ✓ Copied Claude agents: $(ls -1 "$CLAUDE_SOURCE_DIR/agents"/*.md 2>/dev/null | wc -l | tr -d ' ') files"
 fi
 
 # Copy all Cursor skill files
@@ -43,6 +54,12 @@ fi
 if [ -f "$SPECS_SOURCE_DIR/TEMPLATE.md" ]; then
     cp "$SPECS_SOURCE_DIR/TEMPLATE.md" "$SPECS_DEST_DIR/"
     echo "  ✓ Copied TEMPLATE.md from specs"
+fi
+
+# Copy all principles files
+if [ -d "$PRINCIPLES_SOURCE_DIR" ]; then
+    cp "$PRINCIPLES_SOURCE_DIR"/*.md "$PRINCIPLES_DEST_DIR/" 2>/dev/null || true
+    echo "  ✓ Copied principles: $(ls -1 "$PRINCIPLES_SOURCE_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ') files"
 fi
 
 echo "Template sync complete!"

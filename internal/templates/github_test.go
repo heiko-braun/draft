@@ -35,6 +35,10 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 		{"cursor specs TEMPLATE.md", "heiko-braun-draft-abc123/.cursor/specs/TEMPLATE.md", true},
 		{"old claude specs TEMPLATE.md", "heiko-braun-draft-abc123/.claude/specs/TEMPLATE.md", true},
 
+		// Principles files - should be extracted
+		{"design principles", "heiko-braun-draft-abc123/.principles/design-principles.md", true},
+		{"review role", "heiko-braun-draft-abc123/.principles/review-role.md", true},
+
 		// Project-specific files - should NOT be extracted
 		{"project spec file", "heiko-braun-draft-abc123/specs/my-feature.md", false},
 		{"random file", "heiko-braun-draft-abc123/README.md", false},
@@ -172,6 +176,8 @@ func extractFromTarball(tarballData []byte) (fs.FS, error) {
 		".cursor/skills/refine/SKILL.md",
 		".cursor/skills/verify/SKILL.md",
 		".cursor/specs/TEMPLATE.md",
+		".principles/design-principles.md",
+		".principles/review-role.md",
 		"specs/TEMPLATE.md",
 		".claude/specs/TEMPLATE.md",
 	}

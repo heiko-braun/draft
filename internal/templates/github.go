@@ -180,6 +180,8 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 			".cursor/skills/refine/SKILL.md",
 			".cursor/skills/verify/SKILL.md",
 			".cursor/specs/TEMPLATE.md",
+			".principles/design-principles.md",
+			".principles/review-role.md",
 			"specs/TEMPLATE.md",         // New location
 			".claude/specs/TEMPLATE.md", // Old location (for backward compatibility)
 		}
