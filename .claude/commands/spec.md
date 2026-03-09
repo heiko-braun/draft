@@ -59,6 +59,8 @@ Write a brief spec to `/specs/{feature-name}.md` using the template in `/specs/T
 - `status: proposed`
 - `author`: Get from git config using `git config user.name` and `git config user.email` in format "Name <email>"
 
+**Writing style**: Write in compressed, direct prose. No full sentences where a phrase will do. Omit articles, filler words, and transitional language. Each bullet or sentence should carry new information — no restating the goal, no summarizing what was already said. Aim for the minimum words that preserve meaning.
+
 Keep content concise:
 - Goal: 1-2 sentences
 - Acceptance Criteria: 3-5 checkboxes
