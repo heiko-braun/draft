@@ -16,7 +16,7 @@ Provide the persistence layer for project search: SQLite database with dual FTS5
 ## Acceptance Criteria
 
 - [x] `OpenStore(projectRoot)` creates/opens a SQLite database at the platform cache path derived from `xxh3(realpath(projectRoot))`
-- [x] Schema includes `index_meta`, `files`, `fts` (porter unicode61), and `fts_trigram` (contentless, detail=none) tables as specified
+- [x] Schema includes `index_meta`, `files`, `fts` (porter unicode61), and `fts_trigram` (contentless) tables as specified — `detail=none` is incompatible with the trigram tokenizer (trigram matching relies on phrase queries which require `detail=full`)
 - [x] `index_meta` stores `project_root`, `created_at`, and `schema_version` on first creation
 - [x] Schema version check on open: matching version proceeds, older version triggers migration, newer version returns error suggesting `--force`, missing/corrupt creates fresh
 - [x] `DetectProjectRoot(cwd)` walks upward looking for `.draft/` or `CLAUDE.md`, falls back to cwd
@@ -26,13 +26,13 @@ Provide the persistence layer for project search: SQLite database with dual FTS5
 
 ## Approach
 
-New package `internal/search/`. `project.go` handles root detection (walk upward for `.draft/` or `CLAUDE.md`) and cache path computation (`xxh3` hex hash of resolved absolute path). `store.go` manages SQLite connection via `mattn/go-sqlite3` with `fts5` build tag, creates schema on first open, checks `schema_version` on subsequent opens. Store exposes low-level CRUD for `files` table and insert/delete for both FTS5 tables — no indexing or search logic.
+New package `internal/search/`. `project.go` handles root detection (walk upward for `.draft/` or `CLAUDE.md`) and cache path computation (`xxh3` hex hash of resolved absolute path). `store.go` manages SQLite connection via `modernc.org/sqlite` (CGo-free), creates schema on first open, checks `schema_version` on subsequent opens. Store exposes low-level CRUD for `files` table and insert/delete for both FTS5 tables — no indexing or search logic.
 
 ## Affected Modules
 
 - `internal/search/project.go` — new: project root detection, path-to-hash, cache dir resolution
 - `internal/search/store.go` — new: SQLite connection, schema DDL, version check/migration, CRUD methods
-- `go.mod` — add `mattn/go-sqlite3`, `zeebo/xxh3`
+- `go.mod` — add `modernc.org/sqlite`, `zeebo/xxh3`
 
 ## Test Strategy
 
