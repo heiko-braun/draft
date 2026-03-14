@@ -20,6 +20,51 @@ const (
 	defaultRepo      = "draft"
 )
 
+// ClaudeTemplateFiles lists all template files belonging to the Claude agent.
+var ClaudeTemplateFiles = []string{
+	".claude/commands/spec.md",
+	".claude/commands/implement.md",
+	".claude/commands/refine.md",
+	".claude/commands/verify.md",
+	".claude/agents/verify-agent.md",
+	".claude/rules/draft-search.md",
+}
+
+// CursorTemplateFiles lists all template files belonging to the Cursor agent.
+var CursorTemplateFiles = []string{
+	".cursor/skills/spec/SKILL.md",
+	".cursor/skills/implement/SKILL.md",
+	".cursor/skills/refine/SKILL.md",
+	".cursor/skills/verify/SKILL.md",
+	".cursor/agents/verify-agent.md",
+	".cursor/rules/draft-search.md",
+	".cursor/specs/TEMPLATE.md",
+}
+
+// SharedTemplateFiles lists template files not specific to any agent.
+var SharedTemplateFiles = []string{
+	".principles/design-principles.md",
+	".principles/review-role.md",
+	"specs/TEMPLATE.md",
+}
+
+// LegacyTemplateFiles maps old file locations to their new canonical paths.
+var LegacyTemplateFiles = map[string]string{
+	".claude/specs/TEMPLATE.md": "specs/TEMPLATE.md",
+}
+
+// AllTemplateFiles returns the complete list of allowed template file paths.
+func AllTemplateFiles() []string {
+	files := make([]string, 0, len(ClaudeTemplateFiles)+len(CursorTemplateFiles)+len(SharedTemplateFiles)+len(LegacyTemplateFiles))
+	files = append(files, ClaudeTemplateFiles...)
+	files = append(files, CursorTemplateFiles...)
+	files = append(files, SharedTemplateFiles...)
+	for legacyPath := range LegacyTemplateFiles {
+		files = append(files, legacyPath)
+	}
+	return files
+}
+
 // GitHubLoader loads templates from a GitHub release
 type GitHubLoader struct {
 	owner   string
@@ -168,40 +213,7 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 		relPath := parts[1] // Everything after the root directory
 
 		// Only extract template files (not project-specific specs)
-		// Support both old (.claude/specs/) and new (specs/) locations for backward compatibility
-		allowedFiles := []string{
-			".claude/commands/spec.md",
-			".claude/commands/implement.md",
-			".claude/commands/refine.md",
-			".claude/commands/verify.md",
-			".claude/agents/verify-agent.md",
-			".cursor/skills/spec/SKILL.md",
-			".cursor/skills/implement/SKILL.md",
-			".cursor/skills/refine/SKILL.md",
-			".cursor/skills/verify/SKILL.md",
-			".cursor/agents/verify-agent.md",
-			".cursor/specs/TEMPLATE.md",
-			".principles/design-principles.md",
-			".principles/review-role.md",
-			"specs/TEMPLATE.md",         // New location
-			".claude/specs/TEMPLATE.md", // Old location (for backward compatibility)
-		}
-
-		allowed := false
-		var targetPath string
-		for _, allowedFile := range allowedFiles {
-			if relPath == allowedFile {
-				allowed = true
-				// Normalize old location to new location
-				if relPath == ".claude/specs/TEMPLATE.md" {
-					targetPath = "specs/TEMPLATE.md"
-				} else {
-					targetPath = relPath
-				}
-				break
-			}
-		}
-
+		targetPath, allowed := resolveTemplatePath(relPath)
 		if !allowed {
 			continue
 		}
@@ -226,6 +238,22 @@ func (g *GitHubLoader) downloadAndExtract(ctx context.Context, tarballURL string
 	}
 
 	return memFS, nil
+}
+
+// resolveTemplatePath checks if a path is an allowed template file and returns
+// its canonical target path. Legacy paths are mapped to their new locations.
+func resolveTemplatePath(relPath string) (targetPath string, allowed bool) {
+	// Check legacy mappings first
+	if newPath, ok := LegacyTemplateFiles[relPath]; ok {
+		return newPath, true
+	}
+	// Check all current template files
+	for _, f := range AllTemplateFiles() {
+		if relPath == f {
+			return relPath, true
+		}
+	}
+	return "", false
 }
 
 // memFS is a simple in-memory filesystem implementation

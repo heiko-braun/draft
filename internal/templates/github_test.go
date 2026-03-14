@@ -24,12 +24,16 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 		{"claude verify command", "heiko-braun-draft-abc123/.claude/commands/verify.md", true},
 		{"claude verify agent", "heiko-braun-draft-abc123/.claude/agents/verify-agent.md", true},
 
+		// Claude rules - should be extracted
+		{"claude draft-search rule", "heiko-braun-draft-abc123/.claude/rules/draft-search.md", true},
+
 		// Cursor skills - should all be extracted
 		{"cursor spec skill", "heiko-braun-draft-abc123/.cursor/skills/spec/SKILL.md", true},
 		{"cursor implement skill", "heiko-braun-draft-abc123/.cursor/skills/implement/SKILL.md", true},
 		{"cursor refine skill", "heiko-braun-draft-abc123/.cursor/skills/refine/SKILL.md", true},
 		{"cursor verify skill", "heiko-braun-draft-abc123/.cursor/skills/verify/SKILL.md", true},
 		{"cursor verify agent", "heiko-braun-draft-abc123/.cursor/agents/verify-agent.md", true},
+		{"cursor draft-search rule", "heiko-braun-draft-abc123/.cursor/rules/draft-search.md", true},
 
 		// Template files - should be extracted
 		{"specs TEMPLATE.md", "heiko-braun-draft-abc123/specs/TEMPLATE.md", true},
@@ -165,26 +169,6 @@ func extractFromTarball(tarballData []byte) (fs.FS, error) {
 	memFS := newMemFS()
 	tr := tar.NewReader(gzr)
 
-	// This is the actual allowedFiles list from github.go
-	// Keep this in sync with the production code
-	allowedFiles := []string{
-		".claude/commands/spec.md",
-		".claude/commands/implement.md",
-		".claude/commands/refine.md",
-		".claude/commands/verify.md",
-		".claude/agents/verify-agent.md",
-		".cursor/skills/spec/SKILL.md",
-		".cursor/skills/implement/SKILL.md",
-		".cursor/skills/refine/SKILL.md",
-		".cursor/skills/verify/SKILL.md",
-		".cursor/agents/verify-agent.md",
-		".cursor/specs/TEMPLATE.md",
-		".principles/design-principles.md",
-		".principles/review-role.md",
-		"specs/TEMPLATE.md",
-		".claude/specs/TEMPLATE.md",
-	}
-
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -201,33 +185,16 @@ func extractFromTarball(tarballData []byte) (fs.FS, error) {
 		}
 		relPath := string(parts[1])
 
-		// Check if file is allowed
-		allowed := false
-		var targetPath string
-		for _, allowedFile := range allowedFiles {
-			if relPath == allowedFile {
-				allowed = true
-				// Normalize old location to new location
-				if relPath == ".claude/specs/TEMPLATE.md" {
-					targetPath = "specs/TEMPLATE.md"
-				} else {
-					targetPath = relPath
-				}
-				break
-			}
-		}
-
+		targetPath, allowed := resolveTemplatePath(relPath)
 		if !allowed {
 			continue
 		}
 
-		// Read file content
 		content, err := io.ReadAll(tr)
 		if err != nil {
 			return nil, err
 		}
 
-		// Add to memFS
 		memFS.addFile(targetPath, content)
 	}
 

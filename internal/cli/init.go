@@ -207,36 +207,19 @@ func findConflicts(targetDir string, agents []string) ([]string, error) {
 	var conflicts []string
 
 	// Build list of files to check based on agents
-	filesToCheck := []string{}
+	var filesToCheck []string
 
 	for _, agent := range agents {
 		switch agent {
 		case "claude":
-			filesToCheck = append(filesToCheck,
-				".claude/commands/spec.md",
-				".claude/commands/implement.md",
-				".claude/commands/refine.md",
-				".claude/commands/verify.md",
-				".claude/agents/verify-agent.md",
-				".claude/rules/draft-search.md",
-			)
+			filesToCheck = append(filesToCheck, templates.ClaudeTemplateFiles...)
 		case "cursor":
-			filesToCheck = append(filesToCheck,
-				".cursor/skills/spec/SKILL.md",
-				".cursor/skills/implement/SKILL.md",
-				".cursor/skills/refine/SKILL.md",
-				".cursor/skills/verify/SKILL.md",
-				".cursor/rules/draft-search.md",
-			)
+			filesToCheck = append(filesToCheck, templates.CursorTemplateFiles...)
 		}
 	}
 
-	// specs/TEMPLATE.md and .principles files are always checked
-	filesToCheck = append(filesToCheck,
-		"specs/TEMPLATE.md",
-		".principles/design-principles.md",
-		".principles/review-role.md",
-	)
+	// Shared files are always checked
+	filesToCheck = append(filesToCheck, templates.SharedTemplateFiles...)
 
 	for _, file := range filesToCheck {
 		fullPath := filepath.Join(targetDir, file)
