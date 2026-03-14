@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const SchemaVersion = "1"
@@ -25,7 +25,7 @@ func OpenStore(dbPath, projectRoot string) (*Store, error) {
 		return nil, fmt.Errorf("create cache dir: %w", err)
 	}
 
-	db, err := sql.Open("sqlite3", dbPath+"?_journal=WAL&_fk=1")
+	db, err := sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
