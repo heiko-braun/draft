@@ -2,6 +2,7 @@ package search
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -203,12 +204,89 @@ func TestFormatResults_Empty(t *testing.T) {
 	}
 }
 
-func TestFormatResults_WithResults(t *testing.T) {
+func TestFormatResults_GoSnippet(t *testing.T) {
+	results := []SearchResult{
+		{Path: "main.go", Score: 0.87, Snippet: "func »main«() {}"},
+	}
+	out := FormatResults(results)
+	if !strings.Contains(out, "main.go (score: 0.87)") {
+		t.Errorf("missing path+score header: %q", out)
+	}
+	if !strings.Contains(out, "```go\n") {
+		t.Errorf("missing go language tag: %q", out)
+	}
+	if !strings.Contains(out, "func »main«() {}") {
+		t.Errorf("missing snippet with markers: %q", out)
+	}
+	if !strings.Contains(out, "\n```\n") {
+		t.Errorf("missing closing fence: %q", out)
+	}
+}
+
+func TestFormatResults_MarkdownSnippet(t *testing.T) {
+	results := []SearchResult{
+		{Path: "docs/readme.md", Score: 0.50, Snippet: "## »Overview«"},
+	}
+	out := FormatResults(results)
+	if !strings.Contains(out, "```markdown\n") {
+		t.Errorf("expected markdown language tag: %q", out)
+	}
+}
+
+func TestFormatResults_UnknownExtension(t *testing.T) {
+	results := []SearchResult{
+		{Path: "data.xyz", Score: 0.30, Snippet: "some content"},
+	}
+	out := FormatResults(results)
+	if !strings.Contains(out, "```\n") {
+		t.Errorf("expected bare fence for unknown extension: %q", out)
+	}
+}
+
+func TestFormatResults_NoSnippet(t *testing.T) {
+	results := []SearchResult{
+		{Path: "config.go", Score: 0.60, Snippet: ""},
+	}
+	out := FormatResults(results)
+	if !strings.Contains(out, "config.go (score: 0.60)") {
+		t.Errorf("missing path+score: %q", out)
+	}
+	if strings.Contains(out, "```") {
+		t.Errorf("should not have code fence for empty snippet: %q", out)
+	}
+}
+
+func TestFormatResults_MarkersPreserved(t *testing.T) {
 	results := []SearchResult{
 		{Path: "a.go", Score: 0.87, Snippet: "…the »test« content…"},
 	}
 	out := FormatResults(results)
-	if out == "" {
-		t.Error("expected non-empty formatted output")
+	if !strings.Contains(out, "»test«") {
+		t.Errorf("markers should be preserved: %q", out)
+	}
+	if !strings.Contains(out, "…") {
+		t.Errorf("truncation marker should be preserved: %q", out)
+	}
+}
+
+func TestLangFromExt(t *testing.T) {
+	tests := []struct {
+		path string
+		want string
+	}{
+		{"main.go", "go"},
+		{"app.ts", "typescript"},
+		{"README.md", "markdown"},
+		{"config.yaml", "yaml"},
+		{"config.yml", "yaml"},
+		{"script.sh", "bash"},
+		{"data.unknown", ""},
+		{"noext", ""},
+	}
+	for _, tt := range tests {
+		got := langFromExt(tt.path)
+		if got != tt.want {
+			t.Errorf("langFromExt(%q) = %q, want %q", tt.path, got, tt.want)
+		}
 	}
 }

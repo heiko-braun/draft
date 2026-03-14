@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"math"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -244,7 +245,7 @@ func escapeFTS5(query string) string {
 	return strings.Join(tokens, " ")
 }
 
-// FormatResults formats search results for CLI output.
+// FormatResults formats search results as markdown with fenced code blocks.
 func FormatResults(results []SearchResult) string {
 	if len(results) == 0 {
 		return "No results found.\n"
@@ -254,11 +255,72 @@ func FormatResults(results []SearchResult) string {
 	for _, r := range results {
 		fmt.Fprintf(&sb, "%s (score: %.2f)\n", r.Path, r.Score)
 		if r.Snippet != "" {
-			fmt.Fprintf(&sb, "  %s\n", r.Snippet)
+			lang := langFromExt(r.Path)
+			fmt.Fprintf(&sb, "```%s\n%s\n```\n", lang, r.Snippet)
 		}
 		sb.WriteString("\n")
 	}
 	return sb.String()
+}
+
+// langFromExt returns a markdown language tag for the given file path.
+// Returns empty string for unknown extensions.
+func langFromExt(path string) string {
+	ext := strings.ToLower(filepath.Ext(path))
+	lang, ok := extLangs[ext]
+	if !ok {
+		return ""
+	}
+	return lang
+}
+
+var extLangs = map[string]string{
+	".go":    "go",
+	".js":    "javascript",
+	".ts":    "typescript",
+	".jsx":   "jsx",
+	".tsx":   "tsx",
+	".py":    "python",
+	".rb":    "ruby",
+	".rs":    "rust",
+	".java":  "java",
+	".kt":    "kotlin",
+	".c":     "c",
+	".cpp":   "cpp",
+	".h":     "c",
+	".hpp":   "cpp",
+	".cs":    "csharp",
+	".swift": "swift",
+	".sh":    "bash",
+	".bash":  "bash",
+	".zsh":   "bash",
+	".md":    "markdown",
+	".yaml":  "yaml",
+	".yml":   "yaml",
+	".json":  "json",
+	".toml":  "toml",
+	".xml":   "xml",
+	".html":  "html",
+	".css":   "css",
+	".scss":  "scss",
+	".sql":   "sql",
+	".proto": "protobuf",
+	".tf":    "hcl",
+	".lua":   "lua",
+	".ex":    "elixir",
+	".exs":   "elixir",
+	".erl":   "erlang",
+	".hs":    "haskell",
+	".ml":    "ocaml",
+	".r":     "r",
+	".php":   "php",
+	".pl":    "perl",
+	".vim":   "vim",
+	".el":    "lisp",
+	".clj":   "clojure",
+	".scala": "scala",
+	".dart":  "dart",
+	".zig":   "zig",
 }
 
 // StatusInfo holds information for the --status flag.
