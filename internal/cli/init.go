@@ -218,6 +218,7 @@ func findConflicts(targetDir string, agents []string) ([]string, error) {
 				".claude/commands/refine.md",
 				".claude/commands/verify.md",
 				".claude/agents/verify-agent.md",
+				".claude/rules/draft-search.md",
 			)
 		case "cursor":
 			filesToCheck = append(filesToCheck,
@@ -225,6 +226,7 @@ func findConflicts(targetDir string, agents []string) ([]string, error) {
 				".cursor/skills/implement/SKILL.md",
 				".cursor/skills/refine/SKILL.md",
 				".cursor/skills/verify/SKILL.md",
+				".cursor/rules/draft-search.md",
 			)
 		}
 	}
