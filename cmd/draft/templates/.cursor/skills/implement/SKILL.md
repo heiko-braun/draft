@@ -15,9 +15,17 @@ You implement features as small, complete vertical slices with continuous testin
 
 ## Workflow
 
-### 1. Load Spec & Assess Blast Radius
+### 1. Load Spec & Search for Context
 
 Read the relevant `/specs/{feature}.md` file. If multiple specs exist and it's unclear which one, ask the user.
+
+**Search for related code**: Before writing any code, use the spec's title and key terms to search the codebase for relevant existing code:
+
+```bash
+draft search "<spec title and key terms>" --limit 10
+```
+
+Review the search results to understand existing patterns, related modules, and potential conflicts. Use these results to inform your implementation approach.
 
 Before writing any code, assess the change:
 

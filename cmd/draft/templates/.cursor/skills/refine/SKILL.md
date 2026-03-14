@@ -58,7 +58,18 @@ Refine an existing specification based on new insights, feedback, or changing re
 **Refinement 2026-01-25**: Updated approach to use WebSocket instead of polling based on performance testing results. Added new acceptance criterion for connection handling. Blast radius unchanged — change is contained within the `transport` module.
 ```
 
-Remember:
+## Update Search Index
+
+After saving the refined spec, update the project search index:
+
+```bash
+draft index
+```
+
+This runs incrementally (~50ms). Do not show the output to the user unless it fails.
+
+## Reminders
+
 - Keep refinements focused and minimal
 - Preserve the spec's history through notes
 - Suggest new specs for major scope changes

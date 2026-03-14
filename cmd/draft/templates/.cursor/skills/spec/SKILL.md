@@ -76,6 +76,16 @@ Present the spec summary and ask: "Does this capture what you want? I'll impleme
 
 If the user wants changes, revise the spec and confirm again.
 
+### Phase 4: Update Search Index
+
+After writing the spec file, update the project search index so the new spec is immediately discoverable:
+
+```bash
+draft index
+```
+
+This runs incrementally (~50ms) and only re-indexes the changed file. Do not show the output to the user unless it fails.
+
 ## Reference
 
 See `/specs/TEMPLATE.md` for the spec file format.
