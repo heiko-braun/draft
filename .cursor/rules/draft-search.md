@@ -14,6 +14,3 @@ Prefer Grep when:
 - Matching an exact string or regex
 - Counting occurrences
 - Searching within a single known file
-
-The search index updates automatically after `/spec` and `/refine`.
-Run `draft index` manually after `git pull` or branch switches.
