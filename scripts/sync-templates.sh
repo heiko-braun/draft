@@ -27,7 +27,6 @@ rm -rf "$PRINCIPLES_DEST_DIR"
 # Create destination directories
 mkdir -p "$CLAUDE_DEST_DIR/commands"
 mkdir -p "$CLAUDE_DEST_DIR/agents"
-mkdir -p "$CLAUDE_DEST_DIR/rules"
 mkdir -p "$CURSOR_DEST_DIR"
 mkdir -p "$SPECS_DEST_DIR"
 mkdir -p "$PRINCIPLES_DEST_DIR"
@@ -44,21 +43,11 @@ if [ -d "$CLAUDE_SOURCE_DIR/agents" ]; then
     echo "  ✓ Copied Claude agents: $(ls -1 "$CLAUDE_SOURCE_DIR/agents"/*.md 2>/dev/null | wc -l | tr -d ' ') files"
 fi
 
-# Copy all Claude rule files
-if [ -d "$CLAUDE_SOURCE_DIR/rules" ]; then
-    cp "$CLAUDE_SOURCE_DIR/rules"/*.md "$CLAUDE_DEST_DIR/rules/" 2>/dev/null || true
-    echo "  ✓ Copied Claude rules: $(ls -1 "$CLAUDE_SOURCE_DIR/rules"/*.md 2>/dev/null | wc -l | tr -d ' ') files"
-fi
-
 # Copy all Cursor skill files
 if [ -d "$CURSOR_SOURCE_DIR" ]; then
     cp -r "$CURSOR_SOURCE_DIR"/* "$CURSOR_DEST_DIR/" 2>/dev/null || true
     skill_count=$(find "$CURSOR_SOURCE_DIR/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
     echo "  ✓ Copied Cursor skills: $skill_count files"
-    rule_count=$(ls -1 "$CURSOR_SOURCE_DIR/rules"/*.md 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$rule_count" -gt 0 ]; then
-        echo "  ✓ Copied Cursor rules: $rule_count files"
-    fi
 fi
 
 # Copy only TEMPLATE.md from specs (exclude actual spec files)

@@ -27,7 +27,6 @@ var ClaudeTemplateFiles = []string{
 	".claude/commands/refine.md",
 	".claude/commands/verify.md",
 	".claude/agents/verify-agent.md",
-	".claude/rules/draft-search.md",
 }
 
 // CursorTemplateFiles lists all template files belonging to the Cursor agent.
@@ -37,7 +36,6 @@ var CursorTemplateFiles = []string{
 	".cursor/skills/refine/SKILL.md",
 	".cursor/skills/verify/SKILL.md",
 	".cursor/agents/verify-agent.md",
-	".cursor/rules/draft-search.md",
 	".cursor/specs/TEMPLATE.md",
 }
 

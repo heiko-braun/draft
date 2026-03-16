@@ -24,16 +24,12 @@ func TestGitHubLoaderAllowedFiles(t *testing.T) {
 		{"claude verify command", "heiko-braun-draft-abc123/.claude/commands/verify.md", true},
 		{"claude verify agent", "heiko-braun-draft-abc123/.claude/agents/verify-agent.md", true},
 
-		// Claude rules - should be extracted
-		{"claude draft-search rule", "heiko-braun-draft-abc123/.claude/rules/draft-search.md", true},
-
 		// Cursor skills - should all be extracted
 		{"cursor spec skill", "heiko-braun-draft-abc123/.cursor/skills/spec/SKILL.md", true},
 		{"cursor implement skill", "heiko-braun-draft-abc123/.cursor/skills/implement/SKILL.md", true},
 		{"cursor refine skill", "heiko-braun-draft-abc123/.cursor/skills/refine/SKILL.md", true},
 		{"cursor verify skill", "heiko-braun-draft-abc123/.cursor/skills/verify/SKILL.md", true},
 		{"cursor verify agent", "heiko-braun-draft-abc123/.cursor/agents/verify-agent.md", true},
-		{"cursor draft-search rule", "heiko-braun-draft-abc123/.cursor/rules/draft-search.md", true},
 
 		// Template files - should be extracted
 		{"specs TEMPLATE.md", "heiko-braun-draft-abc123/specs/TEMPLATE.md", true},
