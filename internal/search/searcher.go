@@ -251,16 +251,35 @@ func FormatResults(results []SearchResult) string {
 		return "No results found.\n"
 	}
 
+	const separator = "────────────────────────────────────────\n"
+
 	var sb strings.Builder
-	for _, r := range results {
-		fmt.Fprintf(&sb, "%s (score: %.2f)\n", r.Path, r.Score)
+	for i, r := range results {
+		if i > 0 {
+			sb.WriteString(separator)
+		}
+		fmt.Fprintf(&sb, "[%d] %s\n", i+1, r.Path)
+		fmt.Fprintf(&sb, "    score: %s %.2f\n", scoreBar(r.Score), r.Score)
 		if r.Snippet != "" {
 			lang := langFromExt(r.Path)
-			fmt.Fprintf(&sb, "```%s\n%s\n```\n", lang, r.Snippet)
+			fmt.Fprintf(&sb, "\n    ```%s\n    %s\n    ```\n", lang, strings.ReplaceAll(r.Snippet, "\n", "\n    "))
 		}
 		sb.WriteString("\n")
 	}
 	return sb.String()
+}
+
+// scoreBar returns a visual bar representation of a score (0.0–1.0).
+func scoreBar(score float64) string {
+	const width = 10
+	filled := int(score * width)
+	if filled > width {
+		filled = width
+	}
+	if filled < 0 {
+		filled = 0
+	}
+	return strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
 }
 
 // langFromExt returns a markdown language tag for the given file path.

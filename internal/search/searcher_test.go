@@ -209,16 +209,19 @@ func TestFormatResults_GoSnippet(t *testing.T) {
 		{Path: "main.go", Score: 0.87, Snippet: "func »main«() {}"},
 	}
 	out := FormatResults(results)
-	if !strings.Contains(out, "main.go (score: 0.87)") {
-		t.Errorf("missing path+score header: %q", out)
+	if !strings.Contains(out, "[1] main.go") {
+		t.Errorf("missing numbered path header: %q", out)
 	}
-	if !strings.Contains(out, "```go\n") {
+	if !strings.Contains(out, "0.87") {
+		t.Errorf("missing score: %q", out)
+	}
+	if !strings.Contains(out, "```go") {
 		t.Errorf("missing go language tag: %q", out)
 	}
 	if !strings.Contains(out, "func »main«() {}") {
 		t.Errorf("missing snippet with markers: %q", out)
 	}
-	if !strings.Contains(out, "\n```\n") {
+	if !strings.Contains(out, "```\n") {
 		t.Errorf("missing closing fence: %q", out)
 	}
 }
@@ -248,7 +251,7 @@ func TestFormatResults_NoSnippet(t *testing.T) {
 		{Path: "config.go", Score: 0.60, Snippet: ""},
 	}
 	out := FormatResults(results)
-	if !strings.Contains(out, "config.go (score: 0.60)") {
+	if !strings.Contains(out, "[1] config.go") || !strings.Contains(out, "0.60") {
 		t.Errorf("missing path+score: %q", out)
 	}
 	if strings.Contains(out, "```") {
