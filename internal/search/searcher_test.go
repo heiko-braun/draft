@@ -35,7 +35,7 @@ func TestSearch_FTSRanking(t *testing.T) {
 		"handler.go": "package handler\n// generic handler for HTTP requests\nfunc Handle() {}\n",
 	})
 
-	results, err := Search(s, "authentication middleware", 10)
+	results, err := Search(s, "authentication middleware", SearchOpts{Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestSearch_PathWeighting(t *testing.T) {
 		"utils.go":           "package utils\n// auth_middleware is referenced here\nfunc Helper() {}\n",
 	})
 
-	results, err := Search(s, "auth middleware", 10)
+	results, err := Search(s, "auth middleware", SearchOpts{Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestSearch_TrigramSubstring(t *testing.T) {
 		"service.go": "package service\ntype UserConfigService struct{}\n",
 	})
 
-	results, err := Search(s, "CfgLoad", 10)
+	results, err := Search(s, "CfgLoad", SearchOpts{Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestSearch_TrigramMinLength(t *testing.T) {
 	})
 
 	// 2-char query should not crash.
-	results, err := Search(s, "AB", 10)
+	results, err := Search(s, "AB", SearchOpts{Limit: 10})
 	if err != nil {
 		t.Fatalf("expected no error for short query, got: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestSearch_SnippetFromFTS(t *testing.T) {
 		"main.go": "package main\nimport \"fmt\"\nfunc main() {\n\tfmt.Println(\"hello world\")\n}\n",
 	})
 
-	results, err := Search(s, "hello world", 10)
+	results, err := Search(s, "hello world", SearchOpts{Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestSearch_Limit(t *testing.T) {
 
 	s := indexedStore(t, files)
 
-	results, err := Search(s, "Handler", 3)
+	results, err := Search(s, "Handler", SearchOpts{Limit: 3})
 	if err != nil {
 		t.Fatal(err)
 	}

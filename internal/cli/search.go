@@ -13,6 +13,7 @@ func newSearchCmd() *cobra.Command {
 	var (
 		limitFlag  int
 		statusFlag bool
+		docsFlag   bool
 		dbFlag     string
 	)
 
@@ -28,18 +29,19 @@ func newSearchCmd() *cobra.Command {
 				return fmt.Errorf("query required: draft search <query>")
 			}
 			query := strings.Join(args, " ")
-			return runSearch(query, limitFlag, dbFlag)
+			return runSearch(query, limitFlag, docsFlag, dbFlag)
 		},
 	}
 
 	cmd.Flags().IntVar(&limitFlag, "limit", 20, "Maximum number of results")
 	cmd.Flags().BoolVar(&statusFlag, "status", false, "Show index status")
+	cmd.Flags().BoolVar(&docsFlag, "docs", false, "Search only markdown (.md) files")
 	cmd.Flags().StringVar(&dbFlag, "db", "", "Override index database path")
 
 	return cmd
 }
 
-func runSearch(query string, limit int, dbOverride string) error {
+func runSearch(query string, limit int, docsOnly bool, dbOverride string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -61,7 +63,10 @@ func runSearch(query string, limit int, dbOverride string) error {
 	}
 	defer store.Close()
 
-	results, err := search.Search(store, query, limit)
+	results, err := search.Search(store, query, search.SearchOpts{
+		Limit:    limit,
+		DocsOnly: docsOnly,
+	})
 	if err != nil {
 		return err
 	}

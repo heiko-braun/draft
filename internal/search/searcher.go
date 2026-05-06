@@ -1,6 +1,7 @@
 package search
 
 import (
+	"database/sql"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -31,10 +32,23 @@ type SearchResult struct {
 	Snippet string
 }
 
+// SearchOpts holds optional search parameters.
+type SearchOpts struct {
+	Limit    int
+	DocsOnly bool // restrict to .md files
+}
+
 // Search runs a query against the index and returns ranked results.
-func Search(store *Store, query string, limit int) ([]SearchResult, error) {
+func Search(store *Store, query string, opts SearchOpts) ([]SearchResult, error) {
+	limit := opts.Limit
 	if limit <= 0 {
 		limit = defaultLimit
+	}
+
+	// Build path filter for docs-only mode.
+	var pathFilter string
+	if opts.DocsOnly {
+		pathFilter = "%.md"
 	}
 
 	qt := ClassifyQuery(query)
@@ -44,7 +58,7 @@ func Search(store *Store, query string, limit int) ([]SearchResult, error) {
 
 	switch qt {
 	case QueryNaturalLanguage:
-		ftsResults, err = searchFTS(store, query, limit)
+		ftsResults, err = searchFTS(store, query, limit, pathFilter)
 		if err != nil {
 			return nil, err
 		}
@@ -55,19 +69,19 @@ func Search(store *Store, query string, limit int) ([]SearchResult, error) {
 			// Trigram requires at least 3 chars.
 			return nil, nil
 		}
-		triResults, err = searchTrigram(store, query, limit)
+		triResults, err = searchTrigram(store, query, limit, pathFilter)
 		if err != nil {
 			return nil, err
 		}
 		return triResults, nil
 
 	case QueryMixed:
-		ftsResults, err = searchFTS(store, query, limit)
+		ftsResults, err = searchFTS(store, query, limit, pathFilter)
 		if err != nil {
 			return nil, err
 		}
 		if len(query) >= 3 {
-			triResults, err = searchTrigram(store, query, limit)
+			triResults, err = searchTrigram(store, query, limit, pathFilter)
 			if err != nil {
 				return nil, err
 			}
@@ -103,20 +117,36 @@ func ClassifyQuery(query string) QueryType {
 	return QueryMixed
 }
 
-func searchFTS(store *Store, query string, limit int) ([]SearchResult, error) {
+func searchFTS(store *Store, query string, limit int, pathFilter string) ([]SearchResult, error) {
 	// Escape special FTS5 characters in query.
 	escaped := escapeFTS5(query)
 
-	rows, err := store.DB().Query(`
-		SELECT f.path,
-		       snippet(fts, 1, '»', '«', '…', 32) as snippet,
-		       bm25(fts, 5.0, 1.0) as score
-		FROM fts
-		JOIN files f ON f.id = fts.rowid
-		WHERE fts MATCH ?
-		ORDER BY score
-		LIMIT ?
-	`, escaped, limit)
+	var rows *sql.Rows
+	var err error
+
+	if pathFilter != "" {
+		rows, err = store.DB().Query(`
+			SELECT f.path,
+			       snippet(fts, 1, '»', '«', '…', 32) as snippet,
+			       bm25(fts, 5.0, 1.0) as score
+			FROM fts
+			JOIN files f ON f.id = fts.rowid
+			WHERE fts MATCH ? AND f.path LIKE ?
+			ORDER BY score
+			LIMIT ?
+		`, escaped, pathFilter, limit)
+	} else {
+		rows, err = store.DB().Query(`
+			SELECT f.path,
+			       snippet(fts, 1, '»', '«', '…', 32) as snippet,
+			       bm25(fts, 5.0, 1.0) as score
+			FROM fts
+			JOIN files f ON f.id = fts.rowid
+			WHERE fts MATCH ?
+			ORDER BY score
+			LIMIT ?
+		`, escaped, limit)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("fts query: %w", err)
 	}
@@ -135,16 +165,31 @@ func searchFTS(store *Store, query string, limit int) ([]SearchResult, error) {
 	return results, rows.Err()
 }
 
-func searchTrigram(store *Store, query string, limit int) ([]SearchResult, error) {
-	rows, err := store.DB().Query(`
-		SELECT f.path,
-		       bm25(fts_trigram, 5.0, 1.0) as score
-		FROM fts_trigram
-		JOIN files f ON f.id = fts_trigram.rowid
-		WHERE fts_trigram MATCH ?
-		ORDER BY score
-		LIMIT ?
-	`, query, limit)
+func searchTrigram(store *Store, query string, limit int, pathFilter string) ([]SearchResult, error) {
+	var rows *sql.Rows
+	var err error
+
+	if pathFilter != "" {
+		rows, err = store.DB().Query(`
+			SELECT f.path,
+			       bm25(fts_trigram, 5.0, 1.0) as score
+			FROM fts_trigram
+			JOIN files f ON f.id = fts_trigram.rowid
+			WHERE fts_trigram MATCH ? AND f.path LIKE ?
+			ORDER BY score
+			LIMIT ?
+		`, query, pathFilter, limit)
+	} else {
+		rows, err = store.DB().Query(`
+			SELECT f.path,
+			       bm25(fts_trigram, 5.0, 1.0) as score
+			FROM fts_trigram
+			JOIN files f ON f.id = fts_trigram.rowid
+			WHERE fts_trigram MATCH ?
+			ORDER BY score
+			LIMIT ?
+		`, query, limit)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("trigram query: %w", err)
 	}
