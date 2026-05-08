@@ -675,6 +675,7 @@ async function submitNewComment() {
   selectionAnchor = null;
   await loadDocuments();
   await selectDoc(currentDoc.path);
+  await loadStatus();
 }
 
 function showThread(thread) {
@@ -719,6 +720,7 @@ async function postReply() {
     { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ body: body, author: '' }) });
   input.value = '';
   await refreshThread();
+  await loadStatus();
 }
 
 async function resolveThread() {
@@ -727,6 +729,7 @@ async function resolveThread() {
   await refreshThread();
   await loadDocuments();
   await selectDoc(currentDoc.path);
+  await loadStatus();
 }
 
 async function reopenThread() {
@@ -735,6 +738,7 @@ async function reopenThread() {
   await refreshThread();
   await loadDocuments();
   await selectDoc(currentDoc.path);
+  await loadStatus();
 }
 
 async function deleteThread() {
@@ -744,6 +748,7 @@ async function deleteThread() {
   closePanel();
   await loadDocuments();
   await selectDoc(currentDoc.path);
+  await loadStatus();
 }
 
 async function refreshThread() {
