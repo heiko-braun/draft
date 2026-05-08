@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/heiko-braun/draft/internal/review"
@@ -205,4 +206,22 @@ func currentGitBranch(repoRoot string) string {
 		return ""
 	}
 	return strings.TrimSpace(string(out))
+}
+
+// openBrowser opens a URL in the user's default browser.
+func openBrowser(url string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not open browser: %v\n", err)
+	}
 }

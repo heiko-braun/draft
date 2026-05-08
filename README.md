@@ -68,15 +68,15 @@ draft init --agent cursor   # Cursor only
 /refine authentication
 ```
 
-## Share & Discuss
+## Review & Discuss
 
-View all specs in a web interface for screensharing and discussion with peers:
+Review specs collaboratively with inline comments, threaded discussions, and approvals:
 
 ```bash
-draft present
+draft review
 ```
 
-Opens a browser with rendered specs, table of contents, and metadata—perfect for team reviews and walkthroughs.
+Opens a browser UI with rendered documents, inline text annotation, comment threads, and publish/sync workflow — all stored on a virtual git branch (`draft/reviews`) with no external dependencies.
 
 ## Contribute
 
