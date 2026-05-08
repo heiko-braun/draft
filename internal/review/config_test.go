@@ -8,10 +8,10 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	if len(cfg.DocumentPaths) != 4 {
-		t.Errorf("DocumentPaths length = %d, want 4", len(cfg.DocumentPaths))
+	if len(cfg.DocumentPaths) != 2 {
+		t.Errorf("DocumentPaths length = %d, want 2", len(cfg.DocumentPaths))
 	}
-	expectedPaths := []string{"specs/", "docs/", "rfcs/", "adrs/"}
+	expectedPaths := []string{"docs/", "specs/"}
 	for i, p := range expectedPaths {
 		if cfg.DocumentPaths[i] != p {
 			t.Errorf("DocumentPaths[%d] = %q, want %q", i, cfg.DocumentPaths[i], p)

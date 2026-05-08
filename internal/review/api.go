@@ -32,6 +32,7 @@ type DocumentListItem struct {
 	Title       string `json:"title"`
 	Status      string `json:"status,omitempty"`
 	ThreadCount int    `json:"thread_count"`
+	ModTime     int64  `json:"mod_time"` // Unix timestamp of last modification
 }
 
 // DocumentDetail is returned by GET /api/documents/{path}.

@@ -95,8 +95,8 @@ func TestInitReviewBranch_CreatesExpectedStructure(t *testing.T) {
 	if cfg.DefaultBranch != "main" {
 		t.Errorf("config.json default_branch = %q, want %q", cfg.DefaultBranch, "main")
 	}
-	if len(cfg.DocumentPaths) != 4 {
-		t.Errorf("config.json document_paths length = %d, want 4", len(cfg.DocumentPaths))
+	if len(cfg.DocumentPaths) != 2 {
+		t.Errorf("config.json document_paths length = %d, want 2", len(cfg.DocumentPaths))
 	}
 
 	// Verify empty directories (via .gitkeep).

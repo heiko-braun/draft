@@ -15,7 +15,7 @@ type ReviewConfig struct {
 // DefaultConfig returns a ReviewConfig populated with sensible defaults.
 func DefaultConfig() ReviewConfig {
 	return ReviewConfig{
-		DocumentPaths: []string{"specs/", "docs/", "rfcs/", "adrs/"},
+		DocumentPaths: []string{"docs/", "specs/"},
 		FilePatterns:  []string{"*.md", "*.mdx"},
 		DefaultBranch: "main",
 	}

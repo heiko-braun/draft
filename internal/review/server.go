@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -28,7 +30,9 @@ type Server struct {
 	sourceBranch string
 	repoName     string
 	userEmail    string
+	debug        bool
 	mux          *http.ServeMux
+	logger       *log.Logger
 }
 
 // NewServer creates a Server wired to the given store, syncer, and document index.
@@ -38,6 +42,7 @@ func NewServer(
 	docIndex *DocIndex,
 	config ReviewConfig,
 	docsRoot, reviewsRoot, repoRoot, sourceBranch, repoName, userEmail string,
+	debug bool,
 ) *Server {
 	s := &Server{
 		store:        store,
@@ -50,7 +55,9 @@ func NewServer(
 		sourceBranch: sourceBranch,
 		repoName:     repoName,
 		userEmail:    userEmail,
+		debug:        debug,
 		mux:          http.NewServeMux(),
+		logger:       log.New(os.Stderr, "[review] ", log.Ltime),
 	}
 	s.routes()
 	return s
@@ -58,7 +65,25 @@ func NewServer(
 
 // ServeHTTP implements http.Handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	if s.debug {
+		start := time.Now()
+		lw := &loggingResponseWriter{ResponseWriter: w, status: 200}
+		s.mux.ServeHTTP(lw, r)
+		s.logger.Printf("%s %s %d %s", r.Method, r.URL.Path, lw.status, time.Since(start).Round(time.Millisecond))
+	} else {
+		s.mux.ServeHTTP(w, r)
+	}
+}
+
+// loggingResponseWriter captures the status code for logging.
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (lw *loggingResponseWriter) WriteHeader(code int) {
+	lw.status = code
+	lw.ResponseWriter.WriteHeader(code)
 }
 
 func (s *Server) routes() {
@@ -99,11 +124,17 @@ func (s *Server) handleDocuments(w http.ResponseWriter, r *http.Request) {
 				openCount++
 			}
 		}
+		var modTime int64
+		absPath := filepath.Join(s.docsRoot, path)
+		if info, err := os.Stat(absPath); err == nil {
+			modTime = info.ModTime().Unix()
+		}
 		items = append(items, DocumentListItem{
 			Path:        path,
 			Title:       doc.Title,
 			Status:      doc.FrontMatter.Status,
 			ThreadCount: openCount,
+			ModTime:     modTime,
 		})
 	}
 

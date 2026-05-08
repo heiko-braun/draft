@@ -7,6 +7,7 @@ const reviewUIHTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draft Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -24,7 +25,7 @@ const reviewUIHTML = `<!DOCTYPE html>
   --radius: 6px;
 }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
   height: 100vh;
@@ -87,6 +88,15 @@ body {
   text-align: center;
 }
 .badge.zero { background: var(--border); color: var(--text-muted); }
+.doc-group-header {
+  padding: 0.4rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
 
 /* Center content */
 .center {
@@ -95,23 +105,94 @@ body {
   position: relative;
 }
 .center .doc-content {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  line-height: 1.7;
+  line-height: 1.6;
 }
-.center .doc-content h1 { font-size: 2rem; margin-bottom: 1rem; }
-.center .doc-content h2 { font-size: 1.5rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
-.center .doc-content h3 { font-size: 1.25rem; margin: 1.25rem 0 0.5rem; }
-.center .doc-content p { margin: 0.75rem 0; position: relative; }
-.center .doc-content ul, .center .doc-content ol { margin: 0.75rem 0; padding-left: 1.5rem; }
-.center .doc-content li { margin: 0.25rem 0; }
-.center .doc-content code { background: var(--bg-muted); padding: 0.15rem 0.35rem; border-radius: 3px; font-size: 0.875em; }
-.center .doc-content pre { background: var(--bg-muted); padding: 1rem; border-radius: var(--radius); overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); }
-.center .doc-content pre code { background: none; padding: 0; }
-.center .doc-content blockquote { border-left: 3px solid var(--border); padding-left: 1rem; color: var(--text-muted); margin: 1rem 0; }
-.center .doc-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-.center .doc-content th, .center .doc-content td { border: 1px solid var(--border); padding: 0.5rem; text-align: left; }
-.center .doc-content th { background: var(--bg-muted); font-weight: 600; }
+.center .doc-content h1 {
+  font-size: 2.25rem;
+  font-weight: 600;
+  margin: 0 0 2rem 0;
+  color: hsl(240 10% 3.9%);
+}
+.center .doc-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(240 5.9% 90%);
+  color: hsl(240 10% 3.9%);
+}
+.center .doc-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem 0;
+  color: hsl(240 10% 3.9%);
+}
+.center .doc-content p {
+  margin: 1rem 0;
+  color: hsl(240 3.8% 46.1%);
+  position: relative;
+}
+.center .doc-content ul, .center .doc-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+.center .doc-content li {
+  margin: 0.5rem 0;
+  color: hsl(240 3.8% 46.1%);
+}
+.center .doc-content code {
+  background: hsl(240 4.8% 95.9%);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875em;
+  color: hsl(240 10% 3.9%);
+}
+.center .doc-content pre {
+  background: hsl(240 4.8% 95.9%);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid hsl(240 5.9% 90%);
+}
+.center .doc-content pre code {
+  background: none;
+  padding: 0;
+}
+.center .doc-content blockquote {
+  border-left: 3px solid hsl(240 5.9% 90%);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: hsl(240 3.8% 46.1%);
+}
+.center .doc-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  border: 1px solid hsl(240 5.9% 90%);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.center .doc-content th, .center .doc-content td {
+  border-bottom: 1px solid hsl(240 5.9% 90%);
+  padding: 0.75rem;
+  text-align: left;
+}
+.center .doc-content th {
+  background: hsl(240 4.8% 95.9%);
+  font-weight: 500;
+  color: hsl(240 10% 3.9%);
+}
+.center .doc-content tr:last-child td {
+  border-bottom: none;
+}
+.center .doc-content input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: hsl(240 10% 3.9%);
+}
 
 /* Gutter markers */
 .gutter-marker {
@@ -131,21 +212,20 @@ body {
 }
 .gutter-marker.resolved { background: var(--success); opacity: 0.5; }
 
-/* Floating comment button */
-.comment-btn {
-  position: absolute;
-  display: none;
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius);
-  font-size: 0.8rem;
+/* Inline highlights */
+.review-highlight {
+  background-color: rgba(37, 99, 235, 0.12);
+  border-bottom: 2px solid var(--accent);
   cursor: pointer;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 2px;
+  transition: background-color 0.15s;
 }
-.comment-btn:hover { opacity: 0.9; }
+.review-highlight:hover { background-color: rgba(37, 99, 235, 0.25); }
+.review-highlight.resolved {
+  background-color: rgba(22, 163, 74, 0.08);
+  border-bottom-color: var(--success);
+  opacity: 0.6;
+}
 
 /* Right panel */
 .panel {
@@ -170,10 +250,84 @@ body {
   cursor: pointer;
   color: var(--text-muted);
 }
+.panel-close:hover { color: var(--text); }
 .panel-body {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
+}
+
+/* Comment modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg);
+  border-radius: 0.5rem;
+  width: 500px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 { font-size: 0.95rem; font-weight: 600; }
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body {
+  padding: 1.25rem;
+}
+.modal-excerpt {
+  background: var(--bg-muted);
+  border-left: 3px solid var(--accent);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.modal-body textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+.modal-body textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+.modal-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 .comment-item {
   margin-bottom: 1rem;
@@ -291,7 +445,22 @@ body {
   </aside>
 </div>
 
-<button class="comment-btn" id="comment-btn" onclick="startNewThread()">Comment</button>
+<div class="modal-overlay" id="comment-modal" onclick="onModalOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>New Comment</h3>
+      <button class="modal-close" onclick="closeCommentModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-excerpt" id="modal-excerpt"></div>
+      <textarea id="modal-comment-input" placeholder="Write your comment..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeCommentModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitNewComment()">Submit</button>
+    </div>
+  </div>
+</div>
 
 <div class="status-bar">
   <span class="repo" id="status-repo">--</span>
@@ -323,14 +492,31 @@ async function loadDocuments() {
 function renderDocList() {
   const list = document.getElementById('doc-list');
   list.innerHTML = '';
-  documents.sort((a, b) => a.path.localeCompare(b.path));
+  // Sort by most recently modified first
+  documents.sort((a, b) => (b.mod_time || 0) - (a.mod_time || 0));
+  // Group by top-level directory
+  const groups = {};
   documents.forEach(doc => {
-    const li = document.createElement('li');
-    li.className = 'doc-item' + (currentDoc && currentDoc.path === doc.path ? ' active' : '');
-    li.innerHTML = '<span class="title">' + escHtml(doc.title || doc.path) + '</span>' +
-      '<span class="badge ' + (doc.thread_count === 0 ? 'zero' : '') + '">' + doc.thread_count + '</span>';
-    li.onclick = () => selectDoc(doc.path);
-    list.appendChild(li);
+    const slash = doc.path.indexOf('/');
+    const group = slash > 0 ? doc.path.substring(0, slash) : '.';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(doc);
+  });
+  // Render each group
+  Object.keys(groups).sort().forEach(group => {
+    const header = document.createElement('li');
+    header.className = 'doc-group-header';
+    header.textContent = group === '.' ? 'root' : group;
+    list.appendChild(header);
+    groups[group].forEach(doc => {
+      const li = document.createElement('li');
+      li.className = 'doc-item' + (currentDoc && currentDoc.path === doc.path ? ' active' : '');
+      const fileName = doc.path.substring(doc.path.lastIndexOf('/') + 1);
+      li.innerHTML = '<span class="title">' + escHtml(doc.title || fileName) + '</span>' +
+        '<span class="badge ' + (doc.thread_count === 0 ? 'zero' : '') + '">' + doc.thread_count + '</span>';
+      li.onclick = () => selectDoc(doc.path);
+      list.appendChild(li);
+    });
   });
 }
 
@@ -349,67 +535,98 @@ function renderDocContent() {
     center.innerHTML = '<div class="empty-state">Select a document to begin reviewing</div>';
     return;
   }
-  center.innerHTML = '<div class="doc-content">' + currentDoc.html + '</div>';
-  addGutterMarkers();
+  center.innerHTML = '<div class="doc-content" id="doc-content-wrapper">' + currentDoc.html + '</div>';
+  applyHighlights();
   setupTextSelection();
 }
 
-function addGutterMarkers() {
+function applyHighlights() {
   if (!currentDoc || !currentDoc.threads) return;
   const paragraphs = document.querySelectorAll('[data-paragraph-index]');
-  const threadsByPara = {};
+
   currentDoc.threads.forEach(t => {
+    if (!t.anchor || !t.anchor.excerpt) return;
     const idx = t.anchor.paragraph_index;
-    if (!threadsByPara[idx]) threadsByPara[idx] = [];
-    threadsByPara[idx].push(t);
-  });
-  paragraphs.forEach(p => {
-    const idx = parseInt(p.getAttribute('data-paragraph-index'), 10);
-    const threads = threadsByPara[idx];
-    if (!threads || threads.length === 0) return;
-    p.style.position = 'relative';
-    const openThreads = threads.filter(t => t.status === 'open');
-    const marker = document.createElement('span');
-    marker.className = 'gutter-marker' + (openThreads.length === 0 ? ' resolved' : '');
-    marker.textContent = threads.length;
-    marker.onclick = (e) => { e.stopPropagation(); showThread(threads[0]); };
-    p.appendChild(marker);
+    const para = [...paragraphs].find(p => parseInt(p.getAttribute('data-paragraph-index'), 10) === idx);
+    if (!para) return;
+
+    // Find and wrap the excerpt text within this paragraph.
+    const excerpt = t.anchor.excerpt;
+    const walker = document.createTreeWalker(para, NodeFilter.SHOW_TEXT);
+    let fullText = '';
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push({ node: walker.currentNode, start: fullText.length });
+      fullText += walker.currentNode.textContent;
+    }
+
+    const matchStart = fullText.indexOf(excerpt);
+    if (matchStart === -1) return;
+    const matchEnd = matchStart + excerpt.length;
+
+    // Find which text nodes to wrap.
+    for (let i = textNodes.length - 1; i >= 0; i--) {
+      const tn = textNodes[i];
+      const nodeEnd = tn.start + tn.node.textContent.length;
+      if (tn.start >= matchEnd || nodeEnd <= matchStart) continue;
+
+      const relStart = Math.max(0, matchStart - tn.start);
+      const relEnd = Math.min(tn.node.textContent.length, matchEnd - tn.start);
+
+      const range = document.createRange();
+      range.setStart(tn.node, relStart);
+      range.setEnd(tn.node, relEnd);
+
+      const mark = document.createElement('mark');
+      mark.className = 'review-highlight' + (t.status !== 'open' ? ' resolved' : '');
+      mark.dataset.threadId = t.id;
+      mark.onclick = (e) => { e.stopPropagation(); showThread(t); };
+      range.surroundContents(mark);
+    }
   });
 }
 
 function setupTextSelection() {
   const center = document.getElementById('center');
   center.addEventListener('mouseup', (e) => {
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-      hideCommentBtn();
-      return;
-    }
-    const range = sel.getRangeAt(0);
-    const paraEl = range.startContainer.parentElement.closest('[data-paragraph-index]');
-    if (!paraEl) { hideCommentBtn(); return; }
-    const rect = range.getBoundingClientRect();
-    const centerRect = center.getBoundingClientRect();
-    const btn = document.getElementById('comment-btn');
-    btn.style.top = (rect.top - centerRect.top + center.scrollTop - 30) + 'px';
-    btn.style.left = (rect.left - centerRect.left + rect.width / 2 - 30) + 'px';
-    btn.style.display = 'block';
-    selectionAnchor = {
-      paragraphIndex: parseInt(paraEl.getAttribute('data-paragraph-index'), 10),
-      excerpt: sel.toString().substring(0, 200)
-    };
+    // Ignore clicks on recogito highlights (those open the thread panel).
+    if (e.target.closest('.r6o-annotation')) return;
+    // Delay to let browser finalize selection after recogito processes.
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
+      const range = sel.getRangeAt(0);
+      // Walk up from the range start to find a paragraph element.
+      let node = range.startContainer;
+      if (node.nodeType === 3) node = node.parentElement;
+      const paraEl = node.closest('[data-paragraph-index]');
+      if (!paraEl) return;
+      const excerpt = sel.toString().substring(0, 200);
+      const paragraphIndex = parseInt(paraEl.getAttribute('data-paragraph-index'), 10);
+      selectionAnchor = { paragraphIndex, excerpt };
+      // Open our styled modal.
+      document.getElementById('modal-excerpt').textContent = '"' + excerpt + '"';
+      document.getElementById('modal-comment-input').value = '';
+      document.getElementById('comment-modal').classList.add('open');
+      setTimeout(() => document.getElementById('modal-comment-input').focus(), 50);
+    }, 10);
   });
 }
 
-function hideCommentBtn() {
-  document.getElementById('comment-btn').style.display = 'none';
+function closeCommentModal() {
+  document.getElementById('comment-modal').classList.remove('open');
   selectionAnchor = null;
+  window.getSelection().removeAllRanges();
 }
 
-async function startNewThread() {
-  if (!selectionAnchor || !currentDoc) return;
-  const body = prompt('Enter your comment:');
-  if (!body) { hideCommentBtn(); return; }
+function onModalOverlayClick(e) {
+  if (e.target === document.getElementById('comment-modal')) closeCommentModal();
+}
+
+async function submitNewComment() {
+  const input = document.getElementById('modal-comment-input');
+  const body = input.value.trim();
+  if (!body || !selectionAnchor || !currentDoc) return;
   const req = {
     review_id: '',
     document: currentDoc.path,
@@ -425,7 +642,9 @@ async function startNewThread() {
     author: ''
   };
   await api('/api/threads', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(req) });
-  hideCommentBtn();
+  document.getElementById('comment-modal').classList.remove('open');
+  selectionAnchor = null;
+  await loadDocuments();
   await selectDoc(currentDoc.path);
 }
 
@@ -477,6 +696,7 @@ async function resolveThread() {
   if (!currentThread || !currentDoc) return;
   await api('/api/threads/' + currentThread.id + '/resolve?document=' + encodeURIComponent(currentDoc.path), { method: 'POST' });
   await refreshThread();
+  await loadDocuments();
   await selectDoc(currentDoc.path);
 }
 
@@ -484,6 +704,7 @@ async function reopenThread() {
   if (!currentThread || !currentDoc) return;
   await api('/api/threads/' + currentThread.id + '/reopen?document=' + encodeURIComponent(currentDoc.path), { method: 'POST' });
   await refreshThread();
+  await loadDocuments();
   await selectDoc(currentDoc.path);
 }
 

@@ -56,6 +56,9 @@ func discoverFiles(root string, paths []string) ([]string, error) {
 		abs := filepath.Join(root, p)
 		info, err := os.Stat(abs)
 		if err != nil {
+			if os.IsNotExist(err) {
+				continue // skip configured paths that don't exist in this repo
+			}
 			return nil, fmt.Errorf("stat %s: %w", p, err)
 		}
 

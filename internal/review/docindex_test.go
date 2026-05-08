@@ -385,9 +385,13 @@ func TestIndexDocuments_DeeplyNestedHeadings(t *testing.T) {
 func TestIndexDocuments_NonexistentPath(t *testing.T) {
 	root := t.TempDir()
 
-	_, err := IndexDocuments(root, []string{"nonexistent"})
-	if err == nil {
-		t.Error("expected error for nonexistent path, got nil")
+	// Nonexistent paths are silently skipped (repos may not have all configured dirs)
+	idx, err := IndexDocuments(root, []string{"nonexistent"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(idx.Documents) != 0 {
+		t.Errorf("expected empty index, got %d documents", len(idx.Documents))
 	}
 }
 
