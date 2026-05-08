@@ -2,7 +2,7 @@
 
 **Collaborative review for spec-driven development.**
 
-Version: 0.1.0-draft
+Version: 0.2.0
 Date: 2026-05-08
 
 ---
@@ -44,18 +44,20 @@ On launch, the command:
 2. Reads the remote origin to identify the repository.
 3. Reads git config for user identity (`user.name`, `user.email`).
 4. Locates or creates its worktrees (see §5).
-5. Scans configured document paths for markdown files (defaulting to `specs/` — where Draft already writes specs — plus additional configured paths).
+5. Scans configured document paths for markdown files (defaulting to `docs/` and `specs/`). Non-existent paths are silently skipped.
 6. Opens the review UI in the user's browser, consistent with how `draft view` works.
 
 ### CLI entry points
 
 | Command | Behavior |
 |---|---|
-| `draft review` | Opens the review UI on the default branch (typically `main`). |
+| `draft review` | Opens the review UI for documents on the current branch. |
 | `draft review --branch feature/auth-v2` | Opens focused on a specific branch. |
 | `draft review specs/authentication.md` | Opens directly to a specific document. |
 | `draft review --sync` | Fetches latest review data without opening the UI. |
 | `draft review --status` | Prints a summary of open reviews and pending changes to stdout. |
+| `draft review --port 9000` | Override the default port (8787). |
+| `draft review --debug` | Enable request logging to stderr. |
 
 The `--sync` and `--status` flags support headless/CI workflows without launching the UI. They complement the interactive review experience with scriptable access to review state.
 
@@ -152,14 +154,11 @@ On launch and on sync, `draft review` scans for markdown files in configured pat
 ### Default document paths
 
 ```
-specs/              # Primary — where Draft writes specs via /spec
 docs/
-rfcs/
-adrs/
-architecture/
+specs/
 ```
 
-The `specs/` directory is always included by default since it is where Draft's `/spec` command creates specifications. Additional paths are configurable via `config.json` on the review branch or via CLI flags.
+These paths are included by default. Non-existent paths are silently skipped, so repos without a `docs/` or `specs/` directory work without configuration. Additional paths are configurable via `config.json` on the review branch.
 
 ### Spec front-matter awareness
 
@@ -193,34 +192,29 @@ Comments are anchored to specific locations in specific versions of a document. 
 
 ```json
 {
-  "heading_path": ["Authentication", "Token Lifecycle"],
-  "paragraph_index": 3,
-  "excerpt": "tokens should expire after 24 hours unless",
-  "content_hash": "f8a3e1...",
-  "char_range": [14, 67],
-  "source_ref": "abc123f"
+  "file_hash": "a1b2c3d4e5f6...",
+  "start": 1234,
+  "end": 1289,
+  "excerpt": "tokens should expire after 24 hours unless"
 }
 ```
 
 | Field | Purpose |
 |---|---|
-| `heading_path` | Structural address — the heading hierarchy leading to the content. Most stable across edits. |
-| `paragraph_index` | Paragraph number within the innermost heading section. |
-| `excerpt` | A short text excerpt around the anchored selection. Used for fuzzy matching. |
-| `content_hash` | Hash of the full paragraph at time of annotation. Used for exact-match detection. |
-| `char_range` | Character offset range within the paragraph for precise highlighting. |
-| `source_ref` | Git ref (commit SHA) of the document version when the anchor was created. |
+| `file_hash` | SHA-256 of the file content at annotation time. Detects whether offsets are still valid. |
+| `start` | Character offset where the selection begins in the rendered text content. |
+| `end` | Character offset where the selection ends. |
+| `excerpt` | The selected text. Used for display and as a fallback for re-locating the annotation. |
 
-### Resolution cascade
+### Resolution strategy
 
-When a document changes, `draft review` re-anchors each open thread using a fallback chain:
+When displaying a document, `draft review` resolves each thread's anchor:
 
-1. **Exact match.** The `content_hash` matches a paragraph at the same `heading_path` and `paragraph_index`. The anchor is still valid; no update needed.
-2. **Structural match.** The `heading_path` exists and a paragraph at or near `paragraph_index` contains the `excerpt` (fuzzy substring match). Re-anchor to the matched paragraph.
-3. **Fuzzy search.** The `heading_path` has changed (section renamed or moved). Search all paragraphs in the document for the `excerpt`. If a strong match is found, re-anchor and update the `heading_path`.
-4. **Orphaned.** No match found. The thread is marked as orphaned and displayed in a separate "orphaned comments" section. The user can manually re-anchor or dismiss.
+1. **Hash matches.** The file hasn't changed since annotation — character offsets are valid. Use `start`/`end` directly to highlight the text.
+2. **Hash differs.** The file has been edited. Fall back to searching for the `excerpt` string in the rendered text. If found, highlight at the new position.
+3. **Not found.** The excerpt no longer exists in the document. The thread is shown in the sidebar but cannot be placed inline.
 
-Re-anchoring updates the thread's anchor data on the review branch, so subsequent syncs don't repeat the resolution.
+This approach is simple and works for any content type (paragraphs, headings, table cells, list items) without requiring structural parsing of the HTML.
 
 ---
 
@@ -353,18 +347,16 @@ The UI has three primary zones:
 
 Supports filtering: "with open threads," "needs my review," "recently changed," "all."
 
-**Center — Reading view.** Rendered markdown with annotation anchors highlighted in the gutter. The user reads the document here.
+**Center — Reading view.** Rendered markdown with inline highlights on annotated text. The user reads the document here.
 
-- Selecting text reveals a "Comment" affordance.
-- Existing thread markers in the gutter, positioned at anchor points. Clicking opens the thread.
-- Resolved threads are dimmed but accessible via a toggle.
-- Orphaned threads appear in a collapsible section at the top.
+- Selecting any text opens a comment modal for creating a new thread.
+- Existing annotations are highlighted inline (blue underline for open, faded green for resolved). Clicking a highlight opens the thread in the right panel.
+- Highlights use character offsets when the file is unchanged, falling back to excerpt search when the file has been edited.
 
 **Right panel — Thread detail.** Shows the active thread's comment history, with a reply input at the bottom. Also shows:
 
-- Thread status controls (resolve, reopen, won't fix).
+- Thread status controls (resolve, reopen, delete).
 - The anchor context — the original excerpt the thread was placed on.
-- If the anchor has moved due to document changes, a diff showing what changed.
 
 ### Status bar
 
@@ -372,12 +364,12 @@ Persistent across all views, showing:
 
 | Indicator | States |
 |---|---|
-| **Repo** | Repository name and current source branch. |
-| **Documents** | "Up to date" · "3 commits behind" · "Fetching..." |
-| **Reviews** | "In sync" · "2 updates available" · "Fetching..." |
-| **Local changes** | "No changes" · "3 unpublished changes" (with publish button) |
+| **Repo** | Repository name and current branch. |
+| **Pending changes** | Shown when unpublished local changes exist. |
+| **Sync** | Button to fetch latest review data. Shows "Syncing..." during operation with toast confirmation on completion. |
+| **Publish** | Button to commit and push pending changes. Shows "Publishing..." during operation with toast confirmation or error. |
 
-The local changes indicator is the most important. It must be visible at all times so the user always knows whether they have work that hasn't been shared.
+The pending changes indicator is the most important. It must be visible at all times so the user always knows whether they have work that hasn't been shared. Both Sync and Publish show progress states and toast notifications for success/failure.
 
 ### Key workflows
 
@@ -418,20 +410,16 @@ Stored in `config.json` on the `draft/reviews` branch. Applies to all participan
 
 ```json
 {
-  "schema_version": 1,
   "document_paths": [
-    "specs/",
     "docs/",
-    "rfcs/",
-    "adrs/"
+    "specs/"
   ],
   "file_patterns": ["*.md", "*.mdx"],
-  "default_branch": "main",
-  "review_branch": "draft/reviews"
+  "default_branch": "main"
 }
 ```
 
-The `specs/` path is always present by default, matching Draft's convention of writing specifications to `specs/{feature}.md` with YAML front-matter. Additional paths can be added for teams that keep documents in other locations.
+The default paths are `docs/` and `specs/`. Non-existent paths are silently skipped. Additional paths can be added for teams that keep documents in other locations.
 
 User-local preferences (UI state, filters, notification settings) are stored in `~/.draft/review-config.json`, not on the review branch.
 
@@ -447,15 +435,17 @@ Draft is written in Go. The `review` subcommand is part of the same binary — i
 
 The review UI opens in the user's browser, consistent with how `draft view` already works. The Go binary starts a local HTTP server and opens the browser to it. This avoids the complexity of bundling a desktop framework while reusing a pattern Draft users already know.
 
-The frontend (likely Svelte or React) handles markdown rendering, annotation overlays, and the comment/review interface. It communicates with the local Go server via a REST or WebSocket API.
+The frontend is embedded as a single HTML file with inline CSS and vanilla JavaScript — no build step, no framework dependency. It communicates with the local Go server via a JSON REST API. The UI uses the same Geist font and markdown styling as `draft present` for visual consistency.
 
 ### Key libraries and tools
 
-**Markdown rendering:** Parse to AST on the Go side (using `goldmark` or `gomarkdown`) for document indexing and anchor resolution. The AST is serialized to HTML for the frontend. This can share rendering logic with `draft view`.
+**Markdown rendering:** `goldmark` on the Go side (shared with `draft present`) renders markdown to HTML. The frontend receives pre-rendered HTML.
 
-**Local cache:** SQLite database in `~/.draft/cache/{repo-id}.db` for the document index and ephemeral UI state. Not the source of truth — the review branch is. The cache accelerates launch and avoids re-parsing unchanged documents.
+**Text annotation:** Character-offset-based anchoring with excerpt fallback. Highlights are rendered by walking DOM text nodes and wrapping matched ranges in `<mark>` elements. No external annotation library is required.
 
 **Git operations:** Shell out to `git` for worktree operations, fetch, and push. The user's git is already configured with credentials, SSH agents, and any custom helpers. Using their git binary means Draft inherits all of that without reimplementing credential management. This is consistent with how Draft already operates.
+
+**Review branch initialization:** The orphan branch is created in a temporary directory (`git init` + push) rather than using `git checkout --orphan` in the user's working tree. This ensures the user's working tree, index, and untracked files are never disturbed. Commits on the review branch use `--no-verify` since they contain only JSON data files.
 
 ---
 
@@ -484,16 +474,23 @@ These are explicitly out of scope for v1 but inform architectural decisions.
 ### Initialize review branch (first launch)
 
 ```bash
-# Create orphan branch with initial structure
-git checkout --orphan draft/reviews
-git reset --hard
+# Create orphan branch safely in a temp directory (never touches working tree)
+tmpdir=$(mktemp -d)
+cd "$tmpdir"
+git init
 mkdir -p threads reviews participants
 echo '1' > schema-version
-echo '{}' > config.json
+echo '{"document_paths":["docs/","specs/"],"file_patterns":["*.md","*.mdx"],"default_branch":"main"}' > config.json
+touch threads/.gitkeep reviews/.gitkeep participants/.gitkeep
 git add .
-git commit -m "Initialize draft review data"
-git push origin draft/reviews
-git checkout -  # Return to previous branch
+git commit --no-verify -m "Initialize draft review data"
+git remote add origin <remote-url>
+git push origin HEAD:refs/heads/draft/reviews
+
+# Back in the user's repo, fetch the new branch
+cd /path/to/repo
+git fetch origin draft/reviews:draft/reviews
+rm -rf "$tmpdir"
 ```
 
 ### Create worktrees
