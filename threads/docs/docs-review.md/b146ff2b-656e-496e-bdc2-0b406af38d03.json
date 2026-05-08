@@ -1,0 +1,21 @@
+{
+  "id": "b146ff2b-656e-496e-bdc2-0b406af38d03",
+  "document": "docs/docs-review.md",
+  "anchor": {
+    "file_hash": "44270e9109610d79363ed992245f1f85f578fcaa37cb31a82ffd39d480f4c267",
+    "start": 10125,
+    "end": 10143,
+    "excerpt": "Resolution cascade"
+  },
+  "status": "open",
+  "comments": [
+    {
+      "id": "93a544e4-e519-4862-95e4-d56750e428a9",
+      "author": "ike.braun@googlemail.com",
+      "body": "needs to be tested, sounds brittle",
+      "created_at": "2026-05-08T13:29:35Z"
+    }
+  ],
+  "created_at": "2026-05-08T13:29:35Z",
+  "updated_at": "2026-05-08T13:29:35Z"
+}

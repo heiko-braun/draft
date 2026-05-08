@@ -1,0 +1,21 @@
+{
+  "id": "d8d07dc9-19fd-4038-aed1-4be506f1e385",
+  "document": "docs/docs-review.md",
+  "anchor": {
+    "file_hash": "44270e9109610d79363ed992245f1f85f578fcaa37cb31a82ffd39d480f4c267",
+    "start": 11402,
+    "end": 11426,
+    "excerpt": "\"source_ref\": \"abc123f\","
+  },
+  "status": "open",
+  "comments": [
+    {
+      "id": "10db76a7-13bf-497a-be50-ab31258767d0",
+      "author": "ike.braun@googlemail.com",
+      "body": "are we still using this? I think we moved to line offsets?",
+      "created_at": "2026-05-08T13:30:13Z"
+    }
+  ],
+  "created_at": "2026-05-08T13:30:13Z",
+  "updated_at": "2026-05-08T13:30:13Z"
+}
