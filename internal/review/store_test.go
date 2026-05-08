@@ -215,10 +215,10 @@ func TestCreateThread_And_GetThread(t *testing.T) {
 	store := NewStore(root)
 
 	anchor := Anchor{
-		HeadingPath:    []string{"Goal"},
-		ParagraphIndex: 0,
-		Excerpt:        "test excerpt",
-		ContentHash:    "hash123",
+		FileHash: "hash123",
+		Start:    0,
+		End:      12,
+		Excerpt:  "test excerpt",
 	}
 
 	thread, err := store.CreateThread("review-1", "docs/spec.md", anchor)
@@ -259,7 +259,7 @@ func TestAddComment(t *testing.T) {
 	root := t.TempDir()
 	store := NewStore(root)
 
-	anchor := Anchor{HeadingPath: []string{"A"}, ParagraphIndex: 0}
+	anchor := Anchor{FileHash: "hashA", Start: 0, End: 5, Excerpt: "hello"}
 	thread, err := store.CreateThread("rev-1", "doc.md", anchor)
 	if err != nil {
 		t.Fatal(err)
@@ -305,7 +305,7 @@ func TestResolveThread_And_ReopenThread(t *testing.T) {
 	root := t.TempDir()
 	store := NewStore(root)
 
-	anchor := Anchor{HeadingPath: []string{"B"}, ParagraphIndex: 1}
+	anchor := Anchor{FileHash: "hashB", Start: 10, End: 20, Excerpt: "some content"}
 	thread, err := store.CreateThread("rev-1", "doc.md", anchor)
 	if err != nil {
 		t.Fatal(err)
@@ -340,7 +340,7 @@ func TestListThreadsByDocument(t *testing.T) {
 	root := t.TempDir()
 	store := NewStore(root)
 
-	anchor := Anchor{HeadingPath: []string{"X"}, ParagraphIndex: 0}
+	anchor := Anchor{FileHash: "hashX", Start: 0, End: 8, Excerpt: "anchor X"}
 
 	_, err := store.CreateThread("rev-1", "docs/a.md", anchor)
 	if err != nil {
@@ -384,7 +384,7 @@ func TestListAllThreads(t *testing.T) {
 	root := t.TempDir()
 	store := NewStore(root)
 
-	anchor := Anchor{HeadingPath: []string{"Y"}, ParagraphIndex: 0}
+	anchor := Anchor{FileHash: "hashY", Start: 0, End: 8, Excerpt: "anchor Y"}
 
 	_, err := store.CreateThread("rev-1", "docs/a.md", anchor)
 	if err != nil {
@@ -426,9 +426,10 @@ func TestUpdateThreadAnchor(t *testing.T) {
 	store := NewStore(root)
 
 	anchor := Anchor{
-		HeadingPath:    []string{"Original"},
-		ParagraphIndex: 0,
-		ContentHash:    "oldhash",
+		FileHash: "oldhash",
+		Start:    0,
+		End:      10,
+		Excerpt:  "original text",
 	}
 	thread, err := store.CreateThread("rev-1", "doc.md", anchor)
 	if err != nil {
@@ -436,10 +437,10 @@ func TestUpdateThreadAnchor(t *testing.T) {
 	}
 
 	newAnchor := Anchor{
-		HeadingPath:    []string{"Moved", "Sub"},
-		ParagraphIndex: 3,
-		ContentHash:    "newhash",
-		Excerpt:        "updated",
+		FileHash: "newhash",
+		Start:    30,
+		End:      45,
+		Excerpt:  "updated text",
 	}
 	if err := store.UpdateThreadAnchor("doc.md", thread.ID, newAnchor); err != nil {
 		t.Fatal(err)
@@ -449,11 +450,11 @@ func TestUpdateThreadAnchor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Anchor.ContentHash != "newhash" {
-		t.Errorf("Anchor ContentHash = %q, want %q", got.Anchor.ContentHash, "newhash")
+	if got.Anchor.FileHash != "newhash" {
+		t.Errorf("Anchor FileHash = %q, want %q", got.Anchor.FileHash, "newhash")
 	}
-	if got.Anchor.ParagraphIndex != 3 {
-		t.Errorf("Anchor ParagraphIndex = %d, want 3", got.Anchor.ParagraphIndex)
+	if got.Anchor.Start != 30 {
+		t.Errorf("Anchor Start = %d, want 30", got.Anchor.Start)
 	}
 }
 
@@ -682,9 +683,10 @@ func TestThread_JSONRoundTrip_MinimalForAnchor(t *testing.T) {
 		ID:       "t-1",
 		Document: "doc.md",
 		Anchor: Anchor{
-			HeadingPath:    []string{"Goal"},
-			ParagraphIndex: 0,
-			ContentHash:    "hash",
+			FileHash: "hash",
+			Start:    0,
+			End:      10,
+			Excerpt:  "goal text",
 		},
 	}
 
@@ -720,12 +722,10 @@ func TestThread_JSONRoundTrip_Full(t *testing.T) {
 		ID:       "t-full",
 		Document: "specs/feature.md",
 		Anchor: Anchor{
-			HeadingPath:    []string{"Approach", "Details"},
-			ParagraphIndex: 2,
-			Excerpt:        "test excerpt",
-			ContentHash:    "abc",
-			CharRange:      [2]int{5, 20},
-			SourceRef:      "specs/feature.md:10",
+			FileHash: "abc",
+			Start:    5,
+			End:      20,
+			Excerpt:  "test excerpt",
 		},
 		ReviewID:  "rev-1",
 		Status:    ThreadResolved,
@@ -835,7 +835,7 @@ func TestStore_FileLayout(t *testing.T) {
 	}
 
 	// Create a thread.
-	anchor := Anchor{HeadingPath: []string{"Test"}, ParagraphIndex: 0}
+	anchor := Anchor{FileHash: "hashTest", Start: 0, End: 15, Excerpt: "test section"}
 	thread, err := store.CreateThread(r.ID, "docs/nested/doc.md", anchor)
 	if err != nil {
 		t.Fatal(err)

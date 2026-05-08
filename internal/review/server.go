@@ -2,6 +2,7 @@ package review
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -174,34 +175,17 @@ func (s *Server) handleDocumentDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get threads and resolve anchors.
+	// Compute file hash for anchor staleness detection.
+	fileHash := fmt.Sprintf("%x", sha256.Sum256(content))
+
 	threads, _ := s.store.ListThreadsByDocument(docPath)
-	anchorResults := ResolveAnchors(s.docIndex, threads)
-
-	anchorMap := make(map[string]AnchorResult)
-	for _, ar := range anchorResults {
-		anchorMap[ar.ThreadID] = ar
-	}
-
-	var threadInfos []ThreadInfo
-	for _, t := range threads {
-		ar, ok := anchorMap[t.ID]
-		status := "orphaned"
-		if ok {
-			status = ar.Status.String()
-			t.Anchor = ar.Anchor
-		}
-		threadInfos = append(threadInfos, ThreadInfo{
-			Thread:       t,
-			AnchorStatus: status,
-		})
-	}
 
 	detail := DocumentDetail{
 		Path:     docPath,
 		Title:    doc.Title,
 		HTML:     htmlContent,
-		Threads:  threadInfos,
+		FileHash: fileHash,
+		Threads:  threads,
 		Metadata: doc.FrontMatter,
 	}
 
@@ -451,20 +435,5 @@ func renderReviewMarkdown(source []byte) (string, error) {
 		return "", err
 	}
 
-	// Post-process: add data-paragraph-index to <p> tags.
-	result := addParagraphIndices(buf.String())
-	return result, nil
-}
-
-// pTagPattern matches opening <p> tags.
-var pTagPattern = regexp.MustCompile(`<p>`)
-
-// addParagraphIndices adds data-paragraph-index="N" to each <p> tag in the HTML.
-func addParagraphIndices(htmlStr string) string {
-	idx := 0
-	return pTagPattern.ReplaceAllStringFunc(htmlStr, func(match string) string {
-		result := fmt.Sprintf(`<p data-paragraph-index="%d">`, idx)
-		idx++
-		return result
-	})
+	return buf.String(), nil
 }

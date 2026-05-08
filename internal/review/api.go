@@ -37,17 +37,12 @@ type DocumentListItem struct {
 
 // DocumentDetail is returned by GET /api/documents/{path}.
 type DocumentDetail struct {
-	Path     string       `json:"path"`
-	Title    string       `json:"title"`
-	HTML     string       `json:"html"`
-	Threads  []ThreadInfo `json:"threads"`
-	Metadata FrontMatter  `json:"metadata"`
-}
-
-// ThreadInfo is a thread with resolved anchor info for the UI.
-type ThreadInfo struct {
-	Thread
-	AnchorStatus string `json:"anchor_status"`
+	Path     string      `json:"path"`
+	Title    string      `json:"title"`
+	HTML     string      `json:"html"`
+	FileHash string      `json:"file_hash"`
+	Threads  []Thread    `json:"threads"`
+	Metadata FrontMatter `json:"metadata"`
 }
 
 // StatusResponse is returned by GET /api/status.

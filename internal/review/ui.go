@@ -194,23 +194,6 @@ body {
   accent-color: hsl(240 10% 3.9%);
 }
 
-/* Gutter markers */
-.gutter-marker {
-  position: absolute;
-  left: -2rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  background: var(--accent);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-  cursor: pointer;
-  font-weight: 600;
-}
-.gutter-marker.resolved { background: var(--success); opacity: 0.5; }
 
 /* Inline highlights */
 .review-highlight {
@@ -570,33 +553,58 @@ function renderDocContent() {
   setupTextSelection();
 }
 
+// Compute character offset of a position within the rendered text content.
+function getTextOffset(root, node, offset) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let pos = 0;
+  while (walker.nextNode()) {
+    if (walker.currentNode === node) return pos + offset;
+    pos += walker.currentNode.textContent.length;
+  }
+  return pos + offset;
+}
+
+// Build a text-node map of the wrapper for highlight placement.
+function getTextNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let pos = 0;
+  while (walker.nextNode()) {
+    nodes.push({ node: walker.currentNode, start: pos });
+    pos += walker.currentNode.textContent.length;
+  }
+  return { nodes, totalLength: pos };
+}
+
 function applyHighlights() {
   if (!currentDoc || !currentDoc.threads) return;
-  const paragraphs = document.querySelectorAll('[data-paragraph-index]');
+  const wrapper = document.getElementById('doc-content-wrapper');
+  const fileHashMatch = currentDoc.file_hash;
 
-  currentDoc.threads.forEach(t => {
-    if (!t.anchor || !t.anchor.excerpt) return;
-    const idx = t.anchor.paragraph_index;
-    const para = [...paragraphs].find(p => parseInt(p.getAttribute('data-paragraph-index'), 10) === idx);
-    if (!para) return;
+  // Sort threads by start offset descending so wrapping doesn't shift later offsets.
+  const sorted = [...currentDoc.threads]
+    .filter(t => t.anchor && t.anchor.excerpt)
+    .sort((a, b) => (b.anchor.start || 0) - (a.anchor.start || 0));
 
-    // Find and wrap the excerpt text within this paragraph.
-    const excerpt = t.anchor.excerpt;
-    const walker = document.createTreeWalker(para, NodeFilter.SHOW_TEXT);
-    let fullText = '';
-    const textNodes = [];
-    while (walker.nextNode()) {
-      textNodes.push({ node: walker.currentNode, start: fullText.length });
-      fullText += walker.currentNode.textContent;
+  sorted.forEach(t => {
+    const { nodes } = getTextNodes(wrapper);
+    const fullText = nodes.map(n => n.node.textContent).join('');
+    let matchStart, matchEnd;
+
+    if (t.anchor.file_hash === fileHashMatch && t.anchor.start >= 0 && t.anchor.end > t.anchor.start) {
+      // Offsets are valid — use them directly.
+      matchStart = t.anchor.start;
+      matchEnd = t.anchor.end;
+    } else {
+      // Fallback: search for excerpt in the full text.
+      matchStart = fullText.indexOf(t.anchor.excerpt);
+      if (matchStart === -1) return;
+      matchEnd = matchStart + t.anchor.excerpt.length;
     }
 
-    const matchStart = fullText.indexOf(excerpt);
-    if (matchStart === -1) return;
-    const matchEnd = matchStart + excerpt.length;
-
-    // Find which text nodes to wrap.
-    for (let i = textNodes.length - 1; i >= 0; i--) {
-      const tn = textNodes[i];
+    // Wrap the matching range in <mark> elements.
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const tn = nodes[i];
       const nodeEnd = tn.start + tn.node.textContent.length;
       if (tn.start >= matchEnd || nodeEnd <= matchStart) continue;
 
@@ -611,35 +619,28 @@ function applyHighlights() {
       mark.className = 'review-highlight' + (t.status !== 'open' ? ' resolved' : '');
       mark.dataset.threadId = t.id;
       mark.onclick = (e) => { e.stopPropagation(); showThread(t); };
-      range.surroundContents(mark);
+      try { range.surroundContents(mark); } catch(e) { /* cross-element selection */ }
     }
   });
 }
 
 function setupTextSelection() {
-  const center = document.getElementById('center');
-  center.addEventListener('mouseup', (e) => {
-    // Ignore clicks on recogito highlights (those open the thread panel).
-    if (e.target.closest('.r6o-annotation')) return;
-    // Delay to let browser finalize selection after recogito processes.
+  const wrapper = document.getElementById('doc-content-wrapper');
+  wrapper.addEventListener('mouseup', () => {
     setTimeout(() => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
+      if (!wrapper.contains(sel.anchorNode)) return;
       const range = sel.getRangeAt(0);
-      // Walk up from the range start to find a paragraph element.
-      let node = range.startContainer;
-      if (node.nodeType === 3) node = node.parentElement;
-      const paraEl = node.closest('[data-paragraph-index]');
-      if (!paraEl) return;
+      const start = getTextOffset(wrapper, range.startContainer, range.startOffset);
+      const end = getTextOffset(wrapper, range.endContainer, range.endOffset);
       const excerpt = sel.toString().substring(0, 200);
-      const paragraphIndex = parseInt(paraEl.getAttribute('data-paragraph-index'), 10);
-      selectionAnchor = { paragraphIndex, excerpt };
-      // Open our styled modal.
+      selectionAnchor = { start, end, excerpt };
       document.getElementById('modal-excerpt').textContent = '"' + excerpt + '"';
       document.getElementById('modal-comment-input').value = '';
       document.getElementById('comment-modal').classList.add('open');
       setTimeout(() => document.getElementById('modal-comment-input').focus(), 50);
-    }, 10);
+    }, 0);
   });
 }
 
@@ -661,12 +662,10 @@ async function submitNewComment() {
     review_id: '',
     document: currentDoc.path,
     anchor: {
-      heading_path: [],
-      paragraph_index: selectionAnchor.paragraphIndex,
-      excerpt: selectionAnchor.excerpt,
-      content_hash: '',
-      char_range: [0, 0],
-      source_ref: ''
+      file_hash: currentDoc.file_hash || '',
+      start: selectionAnchor.start,
+      end: selectionAnchor.end,
+      excerpt: selectionAnchor.excerpt
     },
     body: body,
     author: ''

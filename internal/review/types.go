@@ -75,28 +75,23 @@ type Paragraph struct {
 // Anchor describes a precise location within a document that a review thread
 // is attached to. The fields record enough information to re-locate the
 // anchored content even after the document has been edited.
+// Anchor locates a comment within a document using character offsets
+// in the rendered text content, with an excerpt for fallback matching.
 type Anchor struct {
-	// HeadingPath is the sequence of heading texts from the document root
-	// to the section containing the anchored content (e.g. ["Goal", "Sub-goal"]).
-	HeadingPath []string `json:"heading_path"`
+	// FileHash is the SHA-256 of the file content when the anchor was created.
+	// Used to detect whether offsets are still valid.
+	FileHash string `json:"file_hash"`
 
-	// ParagraphIndex is the zero-based index of the paragraph within the document.
-	ParagraphIndex int `json:"paragraph_index"`
+	// Start is the character offset where the selection begins in the
+	// rendered text content (element.textContent).
+	Start int `json:"start"`
 
-	// Excerpt is a representative snippet of the anchored content used for
-	// structural and fuzzy matching when the content hash no longer matches.
+	// End is the character offset where the selection ends.
+	End int `json:"end"`
+
+	// Excerpt is the selected text. Used for display and as a fallback
+	// to re-locate the annotation when the file has changed.
 	Excerpt string `json:"excerpt"`
-
-	// ContentHash is the SHA-256 hex digest of the normalized paragraph text
-	// at the time the anchor was created.
-	ContentHash string `json:"content_hash"`
-
-	// CharRange marks the start and end character offsets within the paragraph.
-	CharRange [2]int `json:"char_range"`
-
-	// SourceRef is an opaque reference to the source location (e.g. file path
-	// and line number) for display purposes.
-	SourceRef string `json:"source_ref"`
 }
 
 // ThreadStatus represents the resolution status of a review thread.
@@ -227,57 +222,4 @@ type Participant struct {
 
 	// Email is the email address of the participant.
 	Email string `json:"email"`
-}
-
-// AnchorStatus describes the outcome of attempting to resolve a thread's
-// anchor against the current document index.
-type AnchorStatus int
-
-const (
-	// AnchorExact means the content hash matched the paragraph at the
-	// expected heading path and index.
-	AnchorExact AnchorStatus = iota
-
-	// AnchorStructural means the heading path exists and a nearby paragraph
-	// (within ±3 positions) contains the excerpt.
-	AnchorStructural
-
-	// AnchorFuzzy means the excerpt was found in a different paragraph
-	// elsewhere in the document.
-	AnchorFuzzy
-
-	// AnchorOrphaned means no match could be found; the thread's original
-	// anchor is preserved for display context.
-	AnchorOrphaned
-)
-
-// String returns a human-readable label for the AnchorStatus.
-func (s AnchorStatus) String() string {
-	switch s {
-	case AnchorExact:
-		return "exact"
-	case AnchorStructural:
-		return "structural"
-	case AnchorFuzzy:
-		return "fuzzy"
-	case AnchorOrphaned:
-		return "orphaned"
-	default:
-		return "unknown"
-	}
-}
-
-// AnchorResult captures the outcome of resolving a single thread's anchor
-// against the current document state.
-type AnchorResult struct {
-	// ThreadID is the ID of the thread that was resolved.
-	ThreadID string
-
-	// Status indicates how the anchor was matched.
-	Status AnchorStatus
-
-	// Anchor is the (possibly updated) anchor. For exact matches it is
-	// unchanged; for structural/fuzzy matches it reflects the new location;
-	// for orphaned threads it preserves the original anchor.
-	Anchor Anchor
 }

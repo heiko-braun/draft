@@ -194,9 +194,10 @@ func TestMergeThreads_EmptyComments(t *testing.T) {
 
 func TestMergeThreads_PreservesAnchor(t *testing.T) {
 	anchor := Anchor{
-		HeadingPath:    []string{"Test"},
-		ParagraphIndex: 5,
-		ContentHash:    "hash",
+		FileHash: "hash",
+		Start:    50,
+		End:      75,
+		Excerpt:  "test content",
 	}
 
 	ours := &Thread{
@@ -216,8 +217,8 @@ func TestMergeThreads_PreservesAnchor(t *testing.T) {
 
 	merged := MergeThreads(ours, theirs)
 
-	if merged.Anchor.ParagraphIndex != 5 {
-		t.Errorf("Anchor ParagraphIndex = %d, want 5", merged.Anchor.ParagraphIndex)
+	if merged.Anchor.Start != 50 {
+		t.Errorf("Anchor Start = %d, want 50", merged.Anchor.Start)
 	}
 }
 
