@@ -438,6 +438,7 @@ body {
         <div>
           <button class="btn btn-success" id="btn-resolve" onclick="resolveThread()">Resolve</button>
           <button class="btn" id="btn-reopen" onclick="reopenThread()" style="display:none">Reopen</button>
+          <button class="btn" style="color:var(--warning)" onclick="deleteThread()">Delete</button>
         </div>
         <button class="btn btn-primary" onclick="postReply()">Reply</button>
       </div>
@@ -704,6 +705,15 @@ async function reopenThread() {
   if (!currentThread || !currentDoc) return;
   await api('/api/threads/' + currentThread.id + '/reopen?document=' + encodeURIComponent(currentDoc.path), { method: 'POST' });
   await refreshThread();
+  await loadDocuments();
+  await selectDoc(currentDoc.path);
+}
+
+async function deleteThread() {
+  if (!currentThread || !currentDoc) return;
+  if (!confirm('Delete this thread and all its comments?')) return;
+  await api('/api/threads/' + currentThread.id + '/delete?document=' + encodeURIComponent(currentDoc.path), { method: 'POST' });
+  closePanel();
   await loadDocuments();
   await selectDoc(currentDoc.path);
 }

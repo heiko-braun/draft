@@ -279,6 +279,15 @@ func (s *Store) ReopenThread(document, threadID string) error {
 	return s.setThreadStatus(document, threadID, ThreadOpen)
 }
 
+// DeleteThread removes a thread file entirely.
+func (s *Store) DeleteThread(document, threadID string) error {
+	p := s.threadPath(document, threadID)
+	if err := os.Remove(p); err != nil {
+		return fmt.Errorf("deleting thread %s/%s: %w", document, threadID, err)
+	}
+	return nil
+}
+
 func (s *Store) setThreadStatus(document, threadID string, status ThreadStatus) error {
 	t, err := s.GetThread(document, threadID)
 	if err != nil {

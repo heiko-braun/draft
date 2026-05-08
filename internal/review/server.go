@@ -288,7 +288,7 @@ func (s *Server) handleThreads(w http.ResponseWriter, r *http.Request) {
 }
 
 // threadActionPattern matches /api/threads/{id}/action
-var threadActionPattern = regexp.MustCompile(`^/api/threads/([^/]+)/(comments|resolve|reopen)$`)
+var threadActionPattern = regexp.MustCompile(`^/api/threads/([^/]+)/(comments|resolve|reopen|delete)$`)
 
 func (s *Server) handleThreadAction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -344,6 +344,13 @@ func (s *Server) handleThreadAction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSONResponse(w, map[string]string{"status": "open"})
+
+	case "delete":
+		if err := s.store.DeleteThread(docPath, threadID); err != nil {
+			httpError(w, "failed to delete thread", err)
+			return
+		}
+		writeJSONResponse(w, map[string]string{"status": "deleted"})
 	}
 }
 
