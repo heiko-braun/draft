@@ -404,6 +404,34 @@ body {
   cursor: pointer;
 }
 .status-bar button:hover { background: var(--border); }
+.status-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 1rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.toast {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: toast-in 0.2s ease-out;
+  max-width: 300px;
+}
+.toast.info { background: var(--accent); }
+.toast.success { background: var(--success); }
+.toast.error { background: #dc2626; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* Empty state */
 .empty-state {
@@ -468,9 +496,10 @@ body {
   <span id="status-branch">--</span>
   <span class="spacer"></span>
   <span class="pending" id="status-pending"></span>
-  <button onclick="doSync()">Sync</button>
-  <button onclick="doPublish()">Publish</button>
+  <button id="btn-sync" onclick="doSync()">Sync</button>
+  <button id="btn-publish" onclick="doPublish()">Publish</button>
 </div>
+<div class="toast-container" id="toast-container"></div>
 
 <script>
 let currentDoc = null;
@@ -725,17 +754,51 @@ async function refreshThread() {
   if (updated) { currentThread = updated; renderThreadPanel(); }
 }
 
+function showToast(msg, type) {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || 'info');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.remove(); }, 3000);
+}
+
 async function doSync() {
-  await api('/api/sync', { method: 'POST' });
-  await loadDocuments();
-  await loadStatus();
-  if (currentDoc) await selectDoc(currentDoc.path);
+  const btn = document.getElementById('btn-sync');
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  try {
+    await api('/api/sync', { method: 'POST' });
+    showToast('Sync complete', 'success');
+    await loadDocuments();
+    await loadStatus();
+    if (currentDoc) await selectDoc(currentDoc.path);
+  } catch (e) {
+    showToast('Sync failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sync';
+  }
 }
 
 async function doPublish() {
-  const res = await api('/api/publish', { method: 'POST' });
-  if (res.error) { alert('Publish failed: ' + res.error); }
-  await loadStatus();
+  const btn = document.getElementById('btn-publish');
+  btn.disabled = true;
+  btn.textContent = 'Publishing...';
+  try {
+    const res = await api('/api/publish', { method: 'POST' });
+    if (res.error) {
+      showToast('Publish failed: ' + res.error, 'error');
+    } else {
+      showToast('Published successfully', 'success');
+    }
+    await loadStatus();
+  } catch (e) {
+    showToast('Publish failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Publish';
+  }
 }
 
 async function loadStatus() {
