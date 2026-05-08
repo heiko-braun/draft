@@ -1,0 +1,13 @@
+{
+  "document_paths": [
+    "specs/",
+    "docs/",
+    "rfcs/",
+    "adrs/"
+  ],
+  "file_patterns": [
+    "*.md",
+    "*.mdx"
+  ],
+  "default_branch": "main"
+}
