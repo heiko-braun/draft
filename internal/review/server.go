@@ -21,12 +21,11 @@ import (
 
 // Server serves the review UI and JSON API.
 type Server struct {
-	store        *Store
-	syncer       *Syncer
+	store        ReviewStore
+	syncer       ReviewSyncer
 	docIndex     *DocIndex
 	config       ReviewConfig
 	docsRoot     string
-	reviewsRoot  string
 	repoRoot     string
 	sourceBranch string
 	repoName     string
@@ -38,11 +37,11 @@ type Server struct {
 
 // NewServer creates a Server wired to the given store, syncer, and document index.
 func NewServer(
-	store *Store,
-	syncer *Syncer,
+	store ReviewStore,
+	syncer ReviewSyncer,
 	docIndex *DocIndex,
 	config ReviewConfig,
-	docsRoot, reviewsRoot, repoRoot, sourceBranch, repoName, userEmail string,
+	docsRoot, repoRoot, sourceBranch, repoName, userEmail string,
 	debug bool,
 ) *Server {
 	s := &Server{
@@ -51,7 +50,6 @@ func NewServer(
 		docIndex:     docIndex,
 		config:       config,
 		docsRoot:     docsRoot,
-		reviewsRoot:  reviewsRoot,
 		repoRoot:     repoRoot,
 		sourceBranch: sourceBranch,
 		repoName:     repoName,

@@ -17,7 +17,6 @@ func newReviewCmd() *cobra.Command {
 	var (
 		port       int
 		branch     string
-		syncFlag   bool
 		statusFlag bool
 		debugFlag  bool
 	)
@@ -26,30 +25,31 @@ func newReviewCmd() *cobra.Command {
 		Use:   "review [file]",
 		Short: "Launch the document review UI",
 		Long: `Review opens an interactive browser UI for document review with inline
-annotations, threaded discussions, and publishing.
+annotations, threaded discussions, and remote storage via the reviewd service.
+
+The review data is stored on a remote reviewd server (default: http://localhost:5100).
+Set REVIEWD_URL to point to a different server.
 
 Examples:
   draft review
   draft review --branch feature/x
   draft review specs/auth.md
-  draft review --sync
   draft review --status`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runReview(port, branch, syncFlag, statusFlag, debugFlag, args)
+			return runReview(port, branch, statusFlag, debugFlag, args)
 		},
 	}
 
-	cmd.Flags().IntVarP(&port, "port", "p", 8787, "Port for the review server")
+	cmd.Flags().IntVarP(&port, "port", "p", 8787, "Port for the local review server")
 	cmd.Flags().StringVarP(&branch, "branch", "b", "", "Source branch for documents (overrides config)")
-	cmd.Flags().BoolVar(&syncFlag, "sync", false, "Sync review data without opening UI")
 	cmd.Flags().BoolVar(&statusFlag, "status", false, "Print review status and exit")
 	cmd.Flags().BoolVar(&debugFlag, "debug", false, "Enable debug logging for the review server")
 
 	return cmd
 }
 
-func runReview(port int, branchOverride string, syncOnly, statusOnly, debug bool, args []string) error {
+func runReview(port int, branchOverride string, statusOnly, debug bool, args []string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("getting working directory: %w", err)
@@ -61,16 +61,8 @@ func runReview(port int, branchOverride string, syncOnly, statusOnly, debug bool
 		return fmt.Errorf("not a git repository (or no remote configured): %w", err)
 	}
 
-	// 2. Initialize review branch if needed.
-	if err := review.InitReviewBranch(repo.Root); err != nil {
-		return fmt.Errorf("initializing review branch: %w", err)
-	}
-
-	// 3. Default config.
+	// 2. Determine source branch.
 	cfg := review.DefaultConfig()
-
-	// 4. Source branch: default to the currently checked-out branch so the UI
-	// reflects what the user is actually working on.
 	sourceBranch := currentGitBranch(repo.Root)
 	if sourceBranch == "" {
 		sourceBranch = cfg.DefaultBranch
@@ -79,85 +71,52 @@ func runReview(port int, branchOverride string, syncOnly, statusOnly, debug bool
 		sourceBranch = branchOverride
 	}
 
-	// 5. Ensure worktrees.
-	wt, err := review.EnsureWorktrees(repo.Root, cfg, sourceBranch)
-	if err != nil {
-		return fmt.Errorf("setting up worktrees: %w", err)
+	// 3. Get GitHub token for reviewd authentication.
+	token := githubToken()
+
+	// 4. Create remote client.
+	reviewdURL := os.Getenv("REVIEWD_URL")
+	if reviewdURL == "" {
+		reviewdURL = "http://localhost:5100"
 	}
 
-	// 6. Read config from reviews worktree if it exists.
-	configPath := filepath.Join(wt.ReviewsPath, "config.json")
-	if data, readErr := os.ReadFile(configPath); readErr == nil {
-		if parsed, parseErr := review.ParseConfig(data); parseErr == nil {
-			cfg = parsed
-		}
+	owner, repoName := repo.OwnerRepo()
+	client := review.NewClient(reviewdURL, owner, repoName, token)
+
+	// 5. --status mode.
+	if statusOnly {
+		return printReviewStatus(client, client)
 	}
 
-	// 7. Create syncer and store.
-	syncer := review.NewSyncer(repo.Root, wt.ReviewsPath, wt.DocsPath, sourceBranch)
-	store := review.NewStore(wt.ReviewsPath)
-
-	// 8. --status and --sync need sync first.
-	if statusOnly || syncOnly {
-		if syncErr := syncer.SyncAll(); syncErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: sync failed: %v\n", syncErr)
-		}
-		if statusOnly {
-			return printReviewStatus(store, syncer)
-		}
-		fmt.Println("Sync complete")
-		return nil
-	}
-
-	// 9. For the UI path, index documents and start server immediately.
-	// Sync runs in the background — no need to block on network I/O.
-	docsRoot := repo.Root
-	if branchOverride != "" {
-		docsRoot = wt.DocsPath
-	}
-
-	docIndex, err := review.IndexDocuments(docsRoot, cfg.DocumentPaths)
+	// 6. Index documents from local filesystem.
+	docIndex, err := review.IndexDocuments(repo.Root, cfg.DocumentPaths)
 	if err != nil {
 		return fmt.Errorf("indexing documents: %w", err)
 	}
 
-	// Determine user email for authoring comments.
-	userEmail := ""
-	if p, pErr := store.EnsureParticipantFromGit(); pErr == nil {
-		userEmail = p.Email
-	}
+	// 7. Determine user email.
+	userEmail := gitConfigValue("user.email")
 
-	// Determine repo name for display.
-	repoName := filepath.Base(repo.Root)
-
-	// Create server.
+	// 8. Create local server backed by remote client.
 	srv := review.NewServer(
-		store, syncer, docIndex, cfg,
-		docsRoot, wt.ReviewsPath, repo.Root,
-		sourceBranch, repoName, userEmail,
+		client, client, docIndex, cfg,
+		repo.Root, repo.Root,
+		sourceBranch, filepath.Base(repo.Root), userEmail,
 		debug,
 	)
 
 	addr := fmt.Sprintf("localhost:%d", port)
 	url := fmt.Sprintf("http://%s", addr)
 
-	// If a file argument is provided, add it as a URL fragment.
 	if len(args) > 0 {
 		url = url + "#" + args[0]
 	}
 
 	fmt.Printf("Server running at %s\n", url)
+	fmt.Printf("Connected to reviewd at %s\n", reviewdURL)
 	fmt.Println("Press Ctrl+C to stop")
 
-	// Open browser immediately.
 	go openBrowser(url)
-
-	// Sync in background.
-	go func() {
-		if syncErr := syncer.SyncAll(); syncErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: sync failed: %v\n", syncErr)
-		}
-	}()
 
 	if err := http.ListenAndServe(addr, srv); err != nil {
 		return fmt.Errorf("server failed: %w", err)
@@ -166,7 +125,7 @@ func runReview(port int, branchOverride string, syncOnly, statusOnly, debug bool
 	return nil
 }
 
-func printReviewStatus(store *review.Store, syncer *review.Syncer) error {
+func printReviewStatus(store review.ReviewStore, syncer review.ReviewSyncer) error {
 	openReviews, err := store.ListOpenReviews()
 	if err != nil {
 		return fmt.Errorf("listing open reviews: %w", err)
@@ -202,6 +161,27 @@ func printReviewStatus(store *review.Store, syncer *review.Syncer) error {
 func currentGitBranch(repoRoot string) string {
 	cmd := exec.Command("git", "-C", repoRoot, "rev-parse", "--abbrev-ref", "HEAD")
 	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// githubToken returns a GitHub token from the environment or gh CLI.
+func githubToken() string {
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		return token
+	}
+	out, err := exec.Command("gh", "auth", "token").Output()
+	if err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return ""
+}
+
+// gitConfigValue returns a git config value, or "" on error.
+func gitConfigValue(key string) string {
+	out, err := exec.Command("git", "config", "--get", key).Output()
 	if err != nil {
 		return ""
 	}

@@ -1,5 +1,29 @@
 package review
 
+// --- Interfaces ---
+
+// ReviewStore is the interface the local review server uses for thread/comment/review operations.
+type ReviewStore interface {
+	ListThreadsByDocument(document string) ([]Thread, error)
+	ListAllThreads() ([]Thread, error)
+	CreateThread(reviewID, document string, anchor Anchor) (*Thread, error)
+	GetThread(document, threadID string) (*Thread, error)
+	AddComment(document, threadID, author, body string) (*Comment, error)
+	ResolveThread(document, threadID string) error
+	ReopenThread(document, threadID string) error
+	DeleteThread(document, threadID string) error
+	ListReviews() ([]Review, error)
+	ListOpenReviews() ([]Review, error)
+	CreateReview(title string, documents []string, sourceRef string) (*Review, error)
+}
+
+// ReviewSyncer is the interface for sync operations.
+type ReviewSyncer interface {
+	SyncAll() error
+	Publish() error
+	HasPendingChanges() (bool, error)
+}
+
 // --- Request types ---
 
 // CreateReviewRequest is the JSON body for POST /api/reviews.

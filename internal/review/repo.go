@@ -113,3 +113,16 @@ func deriveRepoID(normalizedURL string) string {
 	h := sha256.Sum256([]byte(normalizedURL))
 	return fmt.Sprintf("%x", h[:6]) // 6 bytes = 12 hex chars
 }
+
+// OwnerRepo extracts the GitHub owner and repo name from the normalized URL.
+// For a normalized URL like "github.com/owner/repo", returns ("owner", "repo").
+func (r *RepoInfo) OwnerRepo() (string, string) {
+	parts := strings.Split(r.NormalizedURL, "/")
+	if len(parts) >= 3 {
+		return parts[1], parts[2]
+	}
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return "", r.NormalizedURL
+}
