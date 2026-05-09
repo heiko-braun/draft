@@ -12,6 +12,7 @@ type Server struct {
 	db      *sql.DB
 	store   *Store
 	auth    *AuthMiddleware
+	hub     *Hub
 	mux     *http.ServeMux
 	handler http.Handler
 	logger  *Logger
@@ -24,6 +25,7 @@ func NewServer(db *sql.DB, config Config, logger *Logger) *Server {
 		db:     db,
 		store:  NewStore(db),
 		auth:   NewAuthMiddleware(logger),
+		hub:    NewHub(logger),
 		mux:    http.NewServeMux(),
 		logger: logger,
 		config: config,
@@ -49,6 +51,28 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
+
+	// Thread endpoints
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads", s.handleListThreads)
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handleGetThread)
+	s.mux.HandleFunc("PUT /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handlePutThread)
+	s.mux.HandleFunc("DELETE /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handleDeleteThread)
+
+	// Comment endpoints
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/threads/{threadID}/comments", s.handleAddComment)
+
+	// Review endpoints
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews", s.handleListReviews)
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/reviews", s.handleCreateReview)
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", s.handleGetReview)
+	s.mux.HandleFunc("PATCH /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", s.handlePatchReview)
+
+	// Sync endpoints
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/sync", s.handleSync)
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/publish", s.handlePublish)
+
+	// SSE events
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/events", s.hub.HandleSSE(s.store))
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
