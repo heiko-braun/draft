@@ -41,9 +41,9 @@ dev-db:
 		-e POSTGRES_USER=draft \
 		-e POSTGRES_PASSWORD=draft \
 		-e POSTGRES_DB=draft_reviews \
-		-p 5432:5432 \
+		-p 5434:5432 \
 		postgres:17-alpine \
-	&& echo "Postgres running on localhost:5432 (draft/draft)"
+	&& echo "Postgres running on localhost:5434 (draft/draft)"
 
 dev-db-stop:
 	@podman stop draft-postgres 2>/dev/null; podman rm draft-postgres 2>/dev/null; echo "Postgres stopped"

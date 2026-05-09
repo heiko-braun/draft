@@ -49,6 +49,11 @@ func run() error {
 	}
 	logger.Info("database connected")
 
+	// Run migrations.
+	if err := reviewd.Migrate(db, logger); err != nil {
+		return fmt.Errorf("migrations: %w", err)
+	}
+
 	srv := reviewd.NewServer(db, cfg, logger)
 
 	httpServer := &http.Server{

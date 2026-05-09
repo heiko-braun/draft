@@ -27,7 +27,7 @@ type Config struct {
 // LoadConfig reads configuration from environment variables with sensible defaults.
 func LoadConfig() (Config, error) {
 	c := Config{
-		DatabaseURL:        envOrDefault("DATABASE_URL", "postgres://draft:draft@localhost:5432/draft_reviews?sslmode=disable"),
+		DatabaseURL:        envOrDefault("DATABASE_URL", "postgres://draft:draft@localhost:5434/draft_reviews?sslmode=disable"),
 		Port:               5100,
 		LogLevel:           envOrDefault("LOG_LEVEL", "info"),
 		GitHubClientID:     os.Getenv("GITHUB_CLIENT_ID"),
