@@ -3,6 +3,7 @@ module github.com/heiko-braun/draft
 go 1.24.3
 
 require (
+	github.com/lib/pq v1.12.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/cobra v1.10.2
 	github.com/yuin/goldmark v1.7.16

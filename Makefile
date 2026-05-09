@@ -1,4 +1,4 @@
-.PHONY: build install clean test fmt vet install-hooks sync-templates
+.PHONY: build build-reviewd install clean test fmt vet install-hooks sync-templates dev-db dev-db-stop
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
@@ -33,5 +33,23 @@ vet:
 install-hooks:
 	./scripts/install-git-hooks.sh
 
+build-reviewd:
+	go build -ldflags="-s -w" -o bin/reviewd ./cmd/reviewd
+
+dev-db:
+	@podman run -d --name draft-postgres \
+		-e POSTGRES_USER=draft \
+		-e POSTGRES_PASSWORD=draft \
+		-e POSTGRES_DB=draft_reviews \
+		-p 5432:5432 \
+		postgres:17-alpine \
+	&& echo "Postgres running on localhost:5432 (draft/draft)"
+
+dev-db-stop:
+	@podman stop draft-postgres 2>/dev/null; podman rm draft-postgres 2>/dev/null; echo "Postgres stopped"
+
 run:
 	go run $(LDFLAGS) ./cmd/draft $(ARGS)
+
+run-reviewd:
+	go run ./cmd/reviewd
