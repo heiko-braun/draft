@@ -2,17 +2,12 @@
   "id": "4161c638-9eb5-4452-b705-cd63644ca94e",
   "document": "docs/docs-review.md",
   "anchor": {
-    "heading_path": [],
-    "paragraph_index": 25,
-    "excerpt": "Opens focused on a specific branch.",
-    "content_hash": "",
-    "char_range": [
-      0,
-      0
-    ],
-    "source_ref": ""
+    "file_hash": "",
+    "start": 0,
+    "end": 0,
+    "excerpt": "Opens focused on a specific branch."
   },
-  "status": "open",
+  "status": "resolved",
   "comments": [
     {
       "id": "88c6117e-e806-4fbb-bf96-6275b53310f1",
@@ -28,5 +23,5 @@
     }
   ],
   "created_at": "2026-05-08T13:14:38Z",
-  "updated_at": "2026-05-08T13:14:51Z"
+  "updated_at": "2026-05-08T13:39:50Z"
 }

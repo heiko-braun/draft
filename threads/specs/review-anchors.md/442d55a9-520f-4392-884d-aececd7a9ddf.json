@@ -1,0 +1,21 @@
+{
+  "id": "442d55a9-520f-4392-884d-aececd7a9ddf",
+  "document": "specs/review-anchors.md",
+  "anchor": {
+    "file_hash": "ea9eb156245e6cafb774285fcd1f50a1e6b42bb6f2ed4093e05eb783485575f0",
+    "start": 28,
+    "end": 225,
+    "excerpt": "Provide a robust anchoring mechanism that ties review threads to specific document locations and gracefully handles document evolution — paragraphs rewritten, sections moved, content added/removed."
+  },
+  "status": "open",
+  "comments": [
+    {
+      "id": "0b7fc785-29ed-4448-83b0-17862c2427ec",
+      "author": "ike.braun@googlemail.com",
+      "body": "has become obsolete",
+      "created_at": "2026-05-09T17:35:34Z"
+    }
+  ],
+  "created_at": "2026-05-09T17:35:34Z",
+  "updated_at": "2026-05-09T17:35:34Z"
+}
