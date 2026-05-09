@@ -9,21 +9,27 @@ import (
 
 // Server is the review service HTTP server.
 type Server struct {
-	db     *sql.DB
-	mux    *http.ServeMux
-	logger *Logger
-	config Config
+	db      *sql.DB
+	store   *Store
+	auth    *AuthMiddleware
+	mux     *http.ServeMux
+	handler http.Handler
+	logger  *Logger
+	config  Config
 }
 
 // NewServer creates a new review service server.
 func NewServer(db *sql.DB, config Config, logger *Logger) *Server {
 	s := &Server{
 		db:     db,
+		store:  NewStore(db),
+		auth:   NewAuthMiddleware(logger),
 		mux:    http.NewServeMux(),
 		logger: logger,
 		config: config,
 	}
 	s.routes()
+	s.handler = s.auth.Middleware(s.mux)
 	return s
 }
 
@@ -31,7 +37,7 @@ func NewServer(db *sql.DB, config Config, logger *Logger) *Server {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	lw := &statusWriter{ResponseWriter: w, status: 200}
-	s.mux.ServeHTTP(lw, r)
+	s.handler.ServeHTTP(lw, r)
 	s.logger.Info("request",
 		"method", r.Method,
 		"path", r.URL.Path,
