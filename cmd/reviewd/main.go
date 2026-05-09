@@ -23,9 +23,20 @@ func main() {
 }
 
 func run() error {
+	debug := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--debug" || arg == "-debug" {
+			debug = true
+		}
+	}
+
 	cfg, err := reviewd.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
+	}
+
+	if debug {
+		cfg.LogLevel = "debug"
 	}
 
 	logger := reviewd.NewLogger(cfg.LogLevel)

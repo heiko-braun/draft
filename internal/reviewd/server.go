@@ -3,6 +3,7 @@ package reviewd
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -38,6 +39,13 @@ func NewServer(db *sql.DB, config Config, logger *Logger) *Server {
 // ServeHTTP implements http.Handler.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+	s.logger.Debug("incoming request",
+		"method", r.Method,
+		"path", r.URL.Path,
+		"query", r.URL.RawQuery,
+		"remote", r.RemoteAddr,
+		"content_length", fmt.Sprintf("%d", r.ContentLength),
+	)
 	lw := &statusWriter{ResponseWriter: w, status: 200}
 	s.handler.ServeHTTP(lw, r)
 	s.logger.Info("request",

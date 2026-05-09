@@ -2,6 +2,7 @@ package reviewd
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -19,6 +20,7 @@ func (s *Server) handleListThreads(w http.ResponseWriter, r *http.Request) {
 
 	document := r.URL.Query().Get("document")
 	status := r.URL.Query().Get("status")
+	s.logger.Debug("list threads", "repo", repo.GitHubOwner+"/"+repo.GitHubRepo, "document", document, "status_filter", status)
 
 	var threads []ThreadRow
 	if document != "" {
@@ -60,6 +62,7 @@ func (s *Server) handleListThreads(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleGetThread(w http.ResponseWriter, r *http.Request) {
 	threadID := r.PathValue("threadID")
+	s.logger.Debug("get thread", "thread_id", threadID)
 	thread, err := s.store.GetThread(threadID)
 	if errors.Is(err, ErrNotFound) {
 		writeErrorJSON(w, http.StatusNotFound, "thread not found")
@@ -94,9 +97,12 @@ func (s *Server) handlePutThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.logger.Debug("put thread", "thread_id", threadID, "document", req.Document, "status", req.Status, "if_match", r.Header.Get("If-Match"))
+
 	// Check if thread exists — update vs create.
 	existing, err := s.store.GetThread(threadID)
 	if errors.Is(err, ErrNotFound) {
+		s.logger.Debug("creating new thread", "thread_id", threadID)
 		// Create new thread.
 		t := &review.Thread{
 			ID:       threadID,
@@ -135,8 +141,10 @@ func (s *Server) handlePutThread(w http.ResponseWriter, r *http.Request) {
 		newStatus = existing.Status
 	}
 
+	s.logger.Debug("updating thread", "thread_id", threadID, "new_status", string(newStatus), "expected_version", strconv.Itoa(expectedVersion))
 	updated, err := s.store.UpdateThreadStatus(threadID, newStatus, expectedVersion)
 	if errors.Is(err, ErrVersionConflict) {
+		s.logger.Debug("version conflict", "thread_id", threadID, "expected", strconv.Itoa(expectedVersion))
 		// Return current state for client merge.
 		current, _ := s.store.GetThread(threadID)
 		w.Header().Set("Content-Type", "application/json")
@@ -159,6 +167,7 @@ func (s *Server) handlePutThread(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDeleteThread(w http.ResponseWriter, r *http.Request) {
 	threadID := r.PathValue("threadID")
+	s.logger.Debug("delete thread", "thread_id", threadID)
 
 	// Get thread before deleting for the event.
 	thread, err := s.store.GetThread(threadID)
@@ -198,6 +207,7 @@ func (s *Server) handleAddComment(w http.ResponseWriter, r *http.Request) {
 
 	user := UserFromContext(r.Context())
 	authorID := user.ParticipantID
+	s.logger.Debug("add comment", "thread_id", threadID, "author", user.GitHubLogin, "body_len", strconv.Itoa(len(req.Body)))
 
 	// Ensure participant exists.
 	s.store.GetOrCreateParticipant(authorID, user.Name, user.Email)
@@ -266,6 +276,7 @@ func (s *Server) handleCreateReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.logger.Debug("create review", "title", req.Title, "documents", fmt.Sprintf("%v", req.Documents))
 	rev, err := s.store.CreateReview(repo.ID, req.Title, req.Documents, req.SourceRef)
 	if err != nil {
 		writeErrorJSON(w, http.StatusInternalServerError, err.Error())
@@ -351,6 +362,8 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+
+	s.logger.Debug("sync", "repo", repo.GitHubOwner+"/"+repo.GitHubRepo, "since", req.Since)
 
 	since := time.Time{} // epoch — returns everything
 	if req.Since != "" {
@@ -439,6 +452,8 @@ func (s *Server) handlePublish(w http.ResponseWriter, r *http.Request) {
 		writeErrorJSON(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+
+	s.logger.Debug("publish", "repo", repo.GitHubOwner+"/"+repo.GitHubRepo, "mutations", strconv.Itoa(len(req.Mutations)), "user", user.GitHubLogin)
 
 	results := make([]MutationResult, len(req.Mutations))
 	for i, mut := range req.Mutations {

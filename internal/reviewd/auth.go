@@ -75,6 +75,7 @@ func (am *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		token := extractBearerToken(r)
 		if token == "" {
+			am.logger.Debug("auth: no token", "path", r.URL.Path)
 			writeErrorJSON(w, http.StatusUnauthorized, "missing or invalid Authorization header")
 			return
 		}
@@ -86,6 +87,7 @@ func (am *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		am.logger.Debug("auth: verified", "user", user.GitHubLogin, "participant_id", user.ParticipantID)
 		ctx := ContextWithAuth(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -124,11 +126,14 @@ func (am *AuthMiddleware) verifyToken(token string) (*AuthContext, error) {
 	if entry, ok := am.tokenCache.Load(token); ok {
 		cached := entry.(*tokenCacheEntry)
 		if time.Now().Before(cached.expiresAt) {
+			am.logger.Debug("auth: token cache hit", "user", cached.user.GitHubLogin)
 			return cached.user, nil
 		}
+		am.logger.Debug("auth: token cache expired")
 		am.tokenCache.Delete(token)
 	}
 
+	am.logger.Debug("auth: calling GitHub /user API")
 	// Call GitHub API.
 	req, _ := http.NewRequest("GET", am.githubAPIBase+"/user", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
