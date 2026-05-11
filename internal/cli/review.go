@@ -28,7 +28,7 @@ func newReviewCmd() *cobra.Command {
 		Long: `Review opens an interactive browser UI for document review with inline
 annotations, threaded discussions, and remote storage via the reviewd service.
 
-The review data is stored on a remote reviewd server (default: http://localhost:5100).
+The review data is stored on a remote reviewd server (default: https://reviewd-dev.up.railway.app).
 Use --server or REVIEWD_URL to point to a different server.
 
 Examples:
@@ -83,7 +83,7 @@ func runReview(port int, branchOverride, serverURL string, statusOnly, debug boo
 		reviewdURL = os.Getenv("REVIEWD_URL")
 	}
 	if reviewdURL == "" {
-		reviewdURL = "http://localhost:5100"
+		reviewdURL = "https://reviewd-dev.up.railway.app"
 	}
 
 	owner, repoName := repo.OwnerRepo()
