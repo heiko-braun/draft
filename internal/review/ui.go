@@ -8,6 +8,8 @@ const reviewUIHTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Draft Review</title>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad: false, theme: 'neutral'});</script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -35,13 +37,21 @@ body {
 }
 .layout {
   display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr 0px;
+  grid-template-columns: var(--sidebar-w) auto 1fr 0px;
   flex: 1;
   overflow: hidden;
-  transition: grid-template-columns 0.2s;
 }
 .layout.panel-open {
-  grid-template-columns: var(--sidebar-w) 1fr var(--panel-w);
+  grid-template-columns: var(--sidebar-w) auto 1fr var(--panel-w);
+}
+.resize-handle {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+}
+.resize-handle:hover, .resize-handle.dragging {
+  background: var(--accent);
 }
 
 /* Sidebar */
@@ -64,39 +74,50 @@ body {
   list-style: none;
 }
 .doc-item {
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.5rem;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   border-left: 3px solid transparent;
+  border-radius: 3px;
+  margin: 1px 0.5rem;
 }
 .doc-item:hover { background: var(--border); }
 .doc-item.active {
   background: var(--accent-light);
   border-left-color: var(--accent);
 }
-.doc-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-item .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 0.75rem; }
 .badge {
   background: var(--accent);
   color: white;
-  font-size: 0.7rem;
-  padding: 0.1rem 0.4rem;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 9999px;
-  min-width: 1.2rem;
+  min-width: 1rem;
   text-align: center;
+  margin-left: 0.4rem;
+  flex-shrink: 0;
 }
 .badge.zero { background: var(--border); color: var(--text-muted); }
-.doc-group-header {
-  padding: 0.4rem 1rem;
-  font-size: 0.7rem;
+.doc-folder {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  margin: 1px 0.5rem;
+  border-radius: 3px;
+  font-family: monospace;
 }
+.doc-folder:hover { background: var(--border); }
+.doc-folder .folder-icon { font-style: normal; }
+.doc-tree-children { padding-left: 0.75rem; }
 
 /* Center content */
 .center {
@@ -446,15 +467,45 @@ body {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  flex-direction: column;
+  gap: 1rem;
+}
+.loading-overlay .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay .loading-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
 </style>
 </head>
 <body>
 
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading documents...</div>
+</div>
+
 <div class="layout" id="layout">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <h2>Documents</h2>
     <ul class="doc-list" id="doc-list"></ul>
   </aside>
+  <div class="resize-handle" id="resize-handle"></div>
   <main class="center" id="center">
     <div class="empty-state">Select a document to begin reviewing</div>
   </main>
@@ -511,6 +562,23 @@ let currentThread = null;
 let documents = [];
 let selectionAnchor = null;
 
+// Show API errors as toasts instead of console errors.
+window.addEventListener('unhandledrejection', (e) => {
+  e.preventDefault();
+  const msg = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+  // Try to extract a readable message from JSON error responses.
+  let display = msg;
+  try {
+    const parsed = JSON.parse(msg);
+    if (parsed.error) display = parsed.error;
+  } catch(_) {
+    // Strip "Error: " prefix and HTTP noise.
+    display = display.replace(/^Error:\s*/, '').replace(/^failed to .+?:\s*/, '');
+    try { const p = JSON.parse(display); if (p.error) display = p.error; } catch(_) {}
+  }
+  showToast(display, 'error');
+});
+
 async function api(path, opts) {
   const res = await fetch(path, opts);
   if (!res.ok && res.status !== 201) throw new Error(await res.text());
@@ -526,32 +594,58 @@ async function loadDocuments() {
 function renderDocList() {
   const list = document.getElementById('doc-list');
   list.innerHTML = '';
-  // Sort by most recently modified first
-  documents.sort((a, b) => (b.mod_time || 0) - (a.mod_time || 0));
-  // Group by top-level directory
-  const groups = {};
+
+  // Build a tree from flat paths.
+  const tree = {};
   documents.forEach(doc => {
-    const slash = doc.path.indexOf('/');
-    const group = slash > 0 ? doc.path.substring(0, slash) : '.';
-    if (!groups[group]) groups[group] = [];
-    groups[group].push(doc);
+    const parts = doc.path.split('/');
+    let node = tree;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!node[parts[i]]) node[parts[i]] = {};
+      node = node[parts[i]];
+    }
+    node[parts[parts.length - 1]] = doc;
   });
-  // Render each group
-  Object.keys(groups).sort().forEach(group => {
-    const header = document.createElement('li');
-    header.className = 'doc-group-header';
-    header.textContent = group === '.' ? 'root' : group;
-    list.appendChild(header);
-    groups[group].forEach(doc => {
-      const li = document.createElement('li');
-      li.className = 'doc-item' + (currentDoc && currentDoc.path === doc.path ? ' active' : '');
-      const fileName = doc.path.substring(doc.path.lastIndexOf('/') + 1);
-      li.innerHTML = '<span class="title">' + escHtml(doc.title || fileName) + '</span>' +
-        '<span class="badge ' + (doc.thread_count === 0 ? 'zero' : '') + '">' + doc.thread_count + '</span>';
-      li.onclick = () => selectDoc(doc.path);
-      list.appendChild(li);
+
+  // Render tree recursively.
+  function renderNode(node, container) {
+    const folders = [];
+    const files = [];
+    Object.keys(node).sort().forEach(key => {
+      const val = node[key];
+      if (val && val.path) {
+        files.push({key, doc: val});
+      } else {
+        folders.push({key, children: val});
+      }
     });
-  });
+    // Folders first, then files.
+    folders.forEach(({key, children}) => {
+      const folder = document.createElement('div');
+      folder.className = 'doc-folder';
+      folder.innerHTML = '<span class="folder-icon">&#x25BE;</span> ' + escHtml(key);
+      container.appendChild(folder);
+      const childContainer = document.createElement('div');
+      childContainer.className = 'doc-tree-children';
+      container.appendChild(childContainer);
+      folder.onclick = () => {
+        const hidden = childContainer.style.display === 'none';
+        childContainer.style.display = hidden ? '' : 'none';
+        folder.querySelector('.folder-icon').innerHTML = hidden ? '&#x25BE;' : '&#x25B8;';
+      };
+      renderNode(children, childContainer);
+    });
+    files.forEach(({key, doc}) => {
+      const li = document.createElement('div');
+      li.className = 'doc-item' + (currentDoc && currentDoc.path === doc.path ? ' active' : '');
+      li.innerHTML = '<span class="title">' + escHtml(key) + '</span>' +
+        (doc.thread_count > 0 ? '<span class="badge">' + doc.thread_count + '</span>' : '');
+      li.onclick = () => selectDoc(doc.path);
+      container.appendChild(li);
+    });
+  }
+
+  renderNode(tree, list);
 }
 
 async function selectDoc(path) {
@@ -574,6 +668,34 @@ function renderDocContent() {
     '<div class="doc-content" id="doc-content-wrapper">' + currentDoc.html + '</div>';
   applyHighlights();
   setupTextSelection();
+  renderMermaid();
+}
+
+async function renderMermaid() {
+  const wrapper = document.getElementById('doc-content-wrapper');
+  if (!wrapper) return;
+  const blocks = wrapper.querySelectorAll('code.language-mermaid');
+  for (let i = 0; i < blocks.length; i++) {
+    const code = blocks[i].textContent;
+    const pre = blocks[i].parentElement;
+    try {
+      const {svg} = await mermaid.render('mermaid-' + i, code);
+      const container = document.createElement('div');
+      container.className = 'mermaid-rendered';
+      container.innerHTML = svg;
+      pre.replaceWith(container);
+    } catch (e) {
+      // Leave the original code block, add a small error note below it.
+      pre.style.borderLeft = '3px solid var(--warning)';
+      const errNote = document.createElement('div');
+      errNote.style.cssText = 'font-size:0.75rem;color:var(--warning);padding:0.3rem 0.5rem;';
+      errNote.textContent = 'Diagram error: ' + (e.message || 'invalid syntax');
+      pre.after(errNote);
+      // Clean up any error SVG mermaid may have injected into the DOM.
+      const errEl = document.getElementById('dmermaid-' + i);
+      if (errEl) errEl.remove();
+    }
+  }
 }
 
 // Compute character offset of a position within the rendered text content.
@@ -860,10 +982,39 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Sidebar resize handle.
+(function() {
+  const handle = document.getElementById('resize-handle');
+  const layout = document.getElementById('layout');
+  let dragging = false;
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const w = Math.max(150, Math.min(500, e.clientX));
+    layout.style.gridTemplateColumns = layout.classList.contains('panel-open')
+      ? w + 'px auto 1fr var(--panel-w)'
+      : w + 'px auto 1fr 0px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
 // Initialize.
 (async () => {
   await loadDocuments();
   await loadStatus();
+  document.getElementById('loading-overlay').remove();
   // Check URL hash for direct document open.
   if (window.location.hash) {
     const path = decodeURIComponent(window.location.hash.substring(1));
