@@ -33,9 +33,9 @@ func TestIndexDocuments_BasicDiscovery(t *testing.T) {
 
 func TestIndexDocuments_SingleFile(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "README.md", "# Hello\n\nWorld.\n")
+	writeTestFile(t, root, "overview.md", "# Hello\n\nWorld.\n")
 
-	idx, err := IndexDocuments(root, []string{"README.md"})
+	idx, err := IndexDocuments(root, []string{"overview.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,8 +43,8 @@ func TestIndexDocuments_SingleFile(t *testing.T) {
 	if len(idx.Documents) != 1 {
 		t.Fatalf("Documents count = %d, want 1", len(idx.Documents))
 	}
-	if _, ok := idx.Documents["README.md"]; !ok {
-		t.Error("missing README.md in index")
+	if _, ok := idx.Documents["overview.md"]; !ok {
+		t.Error("missing overview.md in index")
 	}
 }
 

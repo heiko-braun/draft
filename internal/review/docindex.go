@@ -63,7 +63,7 @@ func discoverFiles(root string, paths []string) ([]string, error) {
 		}
 
 		if !info.IsDir() {
-			if isMarkdown(p) && !seen[p] {
+			if isMarkdown(p) && !isTemplate(p) && !isIgnoredFile(p) && !seen[p] {
 				files = append(files, p)
 				seen[p] = true
 			}
@@ -81,7 +81,7 @@ func discoverFiles(root string, paths []string) ([]string, error) {
 			if err != nil {
 				return err
 			}
-			if isMarkdown(rel) && !seen[rel] {
+			if isMarkdown(rel) && !isTemplate(rel) && !isIgnoredFile(rel) && !seen[rel] {
 				files = append(files, rel)
 				seen[rel] = true
 			}
@@ -99,6 +99,17 @@ func discoverFiles(root string, paths []string) ([]string, error) {
 func isMarkdown(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	return ext == ".md" || ext == ".mdx"
+}
+
+// isTemplate returns true for TEMPLATE.md files in any directory.
+func isTemplate(path string) bool {
+	return strings.ToUpper(filepath.Base(path)) == "TEMPLATE.MD"
+}
+
+// isIgnoredFile returns true for files that should be excluded from review indexing.
+func isIgnoredFile(path string) bool {
+	base := strings.ToUpper(filepath.Base(path))
+	return base == "README.MD"
 }
 
 // parseDocument parses a single markdown file into a Document.
