@@ -61,10 +61,14 @@ func (s *Server) handleListThreads(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetThread(w http.ResponseWriter, r *http.Request) {
+	repo, err := s.ensureRepo(r)
+	if err != nil {
+		return
+	}
 	threadID := r.PathValue("threadID")
 	s.logger.Debug("get thread", "thread_id", threadID)
 	thread, err := s.store.GetThread(threadID)
-	if errors.Is(err, ErrNotFound) {
+	if errors.Is(err, ErrNotFound) || (err == nil && thread.RepoID != repo.ID) {
 		writeErrorJSON(w, http.StatusNotFound, "thread not found")
 		return
 	}
@@ -124,6 +128,12 @@ func (s *Server) handlePutThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verify thread belongs to this repo.
+	if existing.RepoID != repo.ID {
+		writeErrorJSON(w, http.StatusNotFound, "thread not found")
+		return
+	}
+
 	// Update existing — requires If-Match header.
 	ifMatch := r.Header.Get("If-Match")
 	if ifMatch == "" {
@@ -166,12 +176,16 @@ func (s *Server) handlePutThread(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteThread(w http.ResponseWriter, r *http.Request) {
+	repo, err := s.ensureRepo(r)
+	if err != nil {
+		return
+	}
 	threadID := r.PathValue("threadID")
 	s.logger.Debug("delete thread", "thread_id", threadID)
 
-	// Get thread before deleting for the event.
+	// Get thread before deleting for the event and repo ownership check.
 	thread, err := s.store.GetThread(threadID)
-	if errors.Is(err, ErrNotFound) {
+	if errors.Is(err, ErrNotFound) || (err == nil && thread.RepoID != repo.ID) {
 		writeErrorJSON(w, http.StatusNotFound, "thread not found")
 		return
 	}
@@ -193,7 +207,18 @@ type AddCommentAPIRequest struct {
 }
 
 func (s *Server) handleAddComment(w http.ResponseWriter, r *http.Request) {
+	repo, err := s.ensureRepo(r)
+	if err != nil {
+		return
+	}
 	threadID := r.PathValue("threadID")
+
+	// Verify thread belongs to this repo.
+	thread, err := s.store.GetThread(threadID)
+	if errors.Is(err, ErrNotFound) || (err == nil && thread.RepoID != repo.ID) {
+		writeErrorJSON(w, http.StatusNotFound, "thread not found")
+		return
+	}
 
 	var req AddCommentAPIRequest
 	if err := decodeJSON(r, &req); err != nil {
@@ -218,8 +243,8 @@ func (s *Server) handleAddComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get thread's repo_id for broadcasting.
-	thread, _ := s.store.GetThread(threadID)
+	// Re-fetch thread for broadcasting (may have been auto-reopened).
+	thread, _ = s.store.GetThread(threadID)
 	if thread != nil {
 		s.broadcastEvent(thread.RepoID, "comment.created", map[string]interface{}{
 			"thread_id": threadID,
@@ -286,7 +311,20 @@ func (s *Server) handleCreateReview(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetReview(w http.ResponseWriter, r *http.Request) {
+	repo, err := s.ensureRepo(r)
+	if err != nil {
+		return
+	}
 	reviewID := r.PathValue("reviewID")
+	belongs, err := s.store.ReviewBelongsToRepo(reviewID, repo.ID)
+	if err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !belongs {
+		writeErrorJSON(w, http.StatusNotFound, "review not found")
+		return
+	}
 	rev, err := s.store.GetReview(reviewID)
 	if errors.Is(err, ErrNotFound) {
 		writeErrorJSON(w, http.StatusNotFound, "review not found")
@@ -307,7 +345,20 @@ type PatchReviewRequest struct {
 }
 
 func (s *Server) handlePatchReview(w http.ResponseWriter, r *http.Request) {
+	repo, err := s.ensureRepo(r)
+	if err != nil {
+		return
+	}
 	reviewID := r.PathValue("reviewID")
+	belongs, err := s.store.ReviewBelongsToRepo(reviewID, repo.ID)
+	if err != nil {
+		writeErrorJSON(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !belongs {
+		writeErrorJSON(w, http.StatusNotFound, "review not found")
+		return
+	}
 
 	var req PatchReviewRequest
 	if err := decodeJSON(r, &req); err != nil {

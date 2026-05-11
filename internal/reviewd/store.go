@@ -395,6 +395,16 @@ func (s *Store) ListReviewsByRepo(repoID string) ([]review.Review, error) {
 	return reviews, rows.Err()
 }
 
+// ReviewBelongsToRepo returns true if the review belongs to the given repo.
+func (s *Store) ReviewBelongsToRepo(reviewID, repoID string) (bool, error) {
+	var count int
+	err := s.db.QueryRow("SELECT COUNT(*) FROM reviews WHERE id = $1 AND repo_id = $2", reviewID, repoID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // UpdateReviewStatus updates a review's status.
 func (s *Store) UpdateReviewStatus(reviewID string, status review.ReviewStatus) error {
 	res, err := s.db.Exec(`
