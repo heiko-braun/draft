@@ -106,6 +106,20 @@ func TestSSE_EventStream(t *testing.T) {
 
 	logger := NewLogger("error")
 	srv := NewServer(db, Config{}, logger)
+	// Mock GitHub API to grant access.
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/user" {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"login": "testuser", "id": 1, "name": "Test", "email": "test@example.com",
+			})
+		} else {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"permissions": map[string]bool{"admin": false, "push": true, "pull": true},
+			})
+		}
+	}))
+	defer gh.Close()
+	srv.auth.SetGitHubAPIBase(gh.URL)
 	srv.store.GetOrCreateParticipant("abc123", "Test User", "test@example.com")
 
 	// Start an SSE connection in a goroutine.
@@ -113,6 +127,7 @@ func TestSSE_EventStream(t *testing.T) {
 	defer cancel()
 
 	req := httptest.NewRequest("GET", "/api/v1/repos/sseorg/sserepo/events", nil)
+	req.Header.Set("Authorization", "Bearer test-token")
 	req = req.WithContext(ctx)
 	req = req.WithContext(ContextWithAuth(req.Context(), &AuthContext{
 		GitHubLogin:   "testuser",

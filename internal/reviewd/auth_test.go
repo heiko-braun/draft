@@ -185,12 +185,10 @@ func TestAuthMiddleware_RepoAccessWrite(t *testing.T) {
 	am := NewAuthMiddleware(NewLogger("error"))
 	am.SetGitHubAPIBase(gh.URL)
 
-	// First authenticate the token.
-	handler := am.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check repo access inside the handler.
-		am.RequireRepoAccess(AccessWrite, func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(200)
-		})(w, r)
+	// First authenticate the token, then check repo access.
+	write := am.RequireRepoAccess(AccessWrite)
+	handler := am.Middleware(write(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
 	}))
 
 	mux := http.NewServeMux()

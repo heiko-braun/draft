@@ -93,31 +93,49 @@ func (am *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	})
 }
 
-// RequireRepoAccess returns middleware that checks the user has at least the
-// given access level for the repo identified by {owner}/{repo} in the URL path.
-func (am *AuthMiddleware) RequireRepoAccess(minLevel AccessLevel, next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		owner := r.PathValue("owner")
-		repo := r.PathValue("repo")
-		if owner == "" || repo == "" {
-			writeErrorJSON(w, http.StatusBadRequest, "missing owner or repo in path")
-			return
-		}
+// RequireRepoAccess returns a middleware function that wraps a handler with a
+// repo permission check. The returned function checks that the authenticated
+// user has at least the given access level for the repo in the URL path.
+func (am *AuthMiddleware) RequireRepoAccess(minLevel AccessLevel) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			owner := r.PathValue("owner")
+			repo := r.PathValue("repo")
+			if owner == "" || repo == "" {
+				writeErrorJSON(w, http.StatusBadRequest, "missing owner or repo in path")
+				return
+			}
 
-		token := extractBearerToken(r)
-		level, err := am.checkRepoAccess(token, owner, repo)
-		if err != nil {
-			am.logger.Warn("repo access check failed", "error", err.Error())
-			writeErrorJSON(w, http.StatusForbidden, "insufficient permissions")
-			return
-		}
+			token := extractBearerToken(r)
+			level, err := am.checkRepoAccess(token, owner, repo)
+			if err != nil {
+				am.logger.Warn("repo access check failed", "error", err.Error())
+				writeErrorJSON(w, http.StatusForbidden, "insufficient permissions")
+				return
+			}
 
-		if level < minLevel {
-			writeErrorJSON(w, http.StatusForbidden, "insufficient permissions")
-			return
-		}
+			if level < minLevel {
+				am.logger.Debug("access denied", "required", accessLevelString(minLevel), "actual", accessLevelString(level), "repo", owner+"/"+repo)
+				writeErrorJSON(w, http.StatusForbidden, "insufficient permissions")
+				return
+			}
 
-		next(w, r)
+			am.logger.Debug("access granted", "level", accessLevelString(level), "repo", owner+"/"+repo)
+			next(w, r)
+		}
+	}
+}
+
+func accessLevelString(l AccessLevel) string {
+	switch l {
+	case AccessRead:
+		return "read"
+	case AccessWrite:
+		return "write"
+	case AccessAdmin:
+		return "admin"
+	default:
+		return "none"
 	}
 }
 

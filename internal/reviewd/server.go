@@ -60,27 +60,30 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
 
+	read := s.auth.RequireRepoAccess(AccessRead)
+	write := s.auth.RequireRepoAccess(AccessWrite)
+
 	// Thread endpoints
-	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads", s.handleListThreads)
-	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handleGetThread)
-	s.mux.HandleFunc("PUT /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handlePutThread)
-	s.mux.HandleFunc("DELETE /api/v1/repos/{owner}/{repo}/threads/{threadID}", s.handleDeleteThread)
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads", read(s.handleListThreads))
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads/{threadID}", read(s.handleGetThread))
+	s.mux.HandleFunc("PUT /api/v1/repos/{owner}/{repo}/threads/{threadID}", write(s.handlePutThread))
+	s.mux.HandleFunc("DELETE /api/v1/repos/{owner}/{repo}/threads/{threadID}", write(s.handleDeleteThread))
 
 	// Comment endpoints
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/threads/{threadID}/comments", s.handleAddComment)
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/threads/{threadID}/comments", write(s.handleAddComment))
 
 	// Review endpoints
-	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews", s.handleListReviews)
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/reviews", s.handleCreateReview)
-	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", s.handleGetReview)
-	s.mux.HandleFunc("PATCH /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", s.handlePatchReview)
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews", read(s.handleListReviews))
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/reviews", write(s.handleCreateReview))
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", read(s.handleGetReview))
+	s.mux.HandleFunc("PATCH /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", write(s.handlePatchReview))
 
 	// Sync endpoints
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/sync", s.handleSync)
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/publish", s.handlePublish)
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/sync", read(s.handleSync))
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/publish", write(s.handlePublish))
 
 	// SSE events
-	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/events", s.hub.HandleSSE(s.store))
+	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/events", read(s.hub.HandleSSE(s.store)))
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {

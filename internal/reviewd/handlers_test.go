@@ -10,12 +10,27 @@ import (
 	"github.com/heiko-braun/draft/internal/review"
 )
 
-// testServer returns a Server with a real DB and auth bypassed (injected via context).
+// testServer returns a Server with a real DB and a mock GitHub API that grants write access.
 func testServer(t *testing.T) *Server {
 	t.Helper()
 	db := testDB(t)
 	logger := NewLogger("error")
 	srv := NewServer(db, Config{}, logger)
+	// Point auth middleware at a mock GitHub that grants write access to all repos.
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/user" {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"login": "testuser", "id": 1, "name": "Test User", "email": "test@example.com",
+			})
+		} else {
+			// Any /repos/* request returns write access.
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"permissions": map[string]bool{"admin": false, "push": true, "pull": true},
+			})
+		}
+	}))
+	t.Cleanup(gh.Close)
+	srv.auth.SetGitHubAPIBase(gh.URL)
 	return srv
 }
 
@@ -27,6 +42,7 @@ func authRequest(method, path string, body interface{}) *http.Request {
 	}
 	r := httptest.NewRequest(method, path, &buf)
 	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Authorization", "Bearer test-token")
 	ctx := ContextWithAuth(r.Context(), &AuthContext{
 		GitHubLogin:   "testuser",
 		GitHubID:      1,
