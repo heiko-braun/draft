@@ -26,6 +26,10 @@ type Config struct {
 
 	// AdminEmails is the list of emails allowed to access the admin UI.
 	AdminEmails []string
+
+	// PublicURL is the externally-reachable base URL (e.g. "https://reviewd.up.railway.app").
+	// Required when GitHubClientID is set (for OAuth callback redirect_uri).
+	PublicURL string
 }
 
 // LoadConfig reads configuration from environment variables with sensible defaults.
@@ -49,6 +53,8 @@ func LoadConfig() (Config, error) {
 	if c.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}
+
+	c.PublicURL = strings.TrimRight(os.Getenv("PUBLIC_URL"), "/")
 
 	if emails := os.Getenv("ADMIN_EMAILS"); emails != "" {
 		for _, e := range strings.Split(emails, ",") {

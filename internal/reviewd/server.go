@@ -10,26 +10,28 @@ import (
 
 // Server is the review service HTTP server.
 type Server struct {
-	db      *sql.DB
-	store   *Store
-	auth    *AuthMiddleware
-	hub     *Hub
-	mux     *http.ServeMux
-	handler http.Handler
-	logger  *Logger
-	config  Config
+	db        *sql.DB
+	store     *Store
+	auth      *AuthMiddleware
+	adminAuth *AdminAuth
+	hub       *Hub
+	mux       *http.ServeMux
+	handler   http.Handler
+	logger    *Logger
+	config    Config
 }
 
 // NewServer creates a new review service server.
 func NewServer(db *sql.DB, config Config, logger *Logger) *Server {
 	s := &Server{
-		db:     db,
-		store:  NewStore(db),
-		auth:   NewAuthMiddleware(logger),
-		hub:    NewHub(logger),
-		mux:    http.NewServeMux(),
-		logger: logger,
-		config: config,
+		db:        db,
+		store:     NewStore(db),
+		auth:      NewAuthMiddleware(logger),
+		adminAuth: NewAdminAuth(config, logger),
+		hub:       NewHub(logger),
+		mux:       http.NewServeMux(),
+		logger:    logger,
+		config:    config,
 	}
 	s.routes()
 	s.handler = s.auth.Middleware(s.mux)
@@ -60,9 +62,11 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
 
-	// Admin UI (requires authenticated admin email).
+	// Admin UI — OAuth login flow + session cookie auth.
+	s.mux.HandleFunc("GET /admin/login", s.adminAuth.handleAdminLogin)
+	s.mux.HandleFunc("GET /admin/callback", s.adminAuth.handleAdminCallback)
 	admin := AdminOnly(s.config.AdminEmails)
-	s.mux.HandleFunc("GET /admin", admin(s.handleAdmin))
+	s.mux.HandleFunc("GET /admin", s.adminAuth.RequireSession(admin(s.handleAdmin)))
 
 	read := s.auth.RequireRepoAccess(AccessRead)
 	write := s.auth.RequireRepoAccess(AccessWrite)
