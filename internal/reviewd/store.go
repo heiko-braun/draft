@@ -285,11 +285,14 @@ func (s *Store) AddComment(threadID, authorID, body string) (*review.Comment, er
 }
 
 // ListComments returns all comments for a thread, ordered by created_at.
+// The author field is resolved to the participant's display name.
 func (s *Store) ListComments(threadID string) ([]review.Comment, error) {
 	rows, err := s.db.Query(`
-		SELECT id, author, body, created_at, COALESCE(updated_at::text, '')
-		FROM comments WHERE thread_id = $1
-		ORDER BY created_at
+		SELECT c.id, COALESCE(p.name, c.author), c.body, c.created_at, COALESCE(c.updated_at::text, '')
+		FROM comments c
+		LEFT JOIN participants p ON p.id = c.author
+		WHERE c.thread_id = $1
+		ORDER BY c.created_at
 	`, threadID)
 	if err != nil {
 		return nil, fmt.Errorf("list comments: %w", err)
