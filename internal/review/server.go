@@ -114,15 +114,17 @@ func (s *Server) handleDocuments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch all threads once to count per document (avoids N round-trips to reviewd).
+	allThreads, _ := s.store.ListAllThreads()
+	threadCounts := make(map[string]int)
+	for _, t := range allThreads {
+		if t.Status == ThreadOpen {
+			threadCounts[t.Document]++
+		}
+	}
+
 	var items []DocumentListItem
 	for path, doc := range s.docIndex.Documents {
-		threads, _ := s.store.ListThreadsByDocument(path)
-		openCount := 0
-		for _, t := range threads {
-			if t.Status == ThreadOpen {
-				openCount++
-			}
-		}
 		var modTime int64
 		absPath := filepath.Join(s.docsRoot, path)
 		if info, err := os.Stat(absPath); err == nil {
@@ -132,7 +134,7 @@ func (s *Server) handleDocuments(w http.ResponseWriter, r *http.Request) {
 			Path:        path,
 			Title:       doc.Title,
 			Status:      doc.FrontMatter.Status,
-			ThreadCount: openCount,
+			ThreadCount: threadCounts[path],
 			ModTime:     modTime,
 		})
 	}
