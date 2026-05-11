@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/heiko-braun/draft/internal/cli/consent"
 	"github.com/heiko-braun/draft/internal/review"
 	"github.com/spf13/cobra"
 )
@@ -77,13 +78,17 @@ func runReview(port int, branchOverride, serverURL string, statusOnly, debug boo
 	// 3. Get GitHub token for reviewd authentication.
 	token := githubToken()
 
-	// 4. Create remote client.
+	// 4. Resolve reviewd URL and check consent for default endpoint.
 	reviewdURL := serverURL
 	if reviewdURL == "" {
 		reviewdURL = os.Getenv("REVIEWD_URL")
 	}
-	if reviewdURL == "" {
+	usingDefault := reviewdURL == ""
+	if usingDefault {
 		reviewdURL = "https://reviewd-dev.up.railway.app"
+		if err := consent.CheckOrPrompt(reviewdURL, os.Stdin, os.Stderr); err != nil {
+			return err
+		}
 	}
 
 	owner, repoName := repo.OwnerRepo()
