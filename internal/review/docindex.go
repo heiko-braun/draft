@@ -109,7 +109,7 @@ func isTemplate(path string) bool {
 // isIgnoredFile returns true for files that should be excluded from review indexing.
 func isIgnoredFile(path string) bool {
 	base := strings.ToUpper(filepath.Base(path))
-	return base == "README.MD"
+	return base == "README.MD" || base == "CONTRIBUTING.MD"
 }
 
 // parseDocument parses a single markdown file into a Document.
