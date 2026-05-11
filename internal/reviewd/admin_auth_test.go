@@ -356,6 +356,7 @@ func TestAdminAuth_BypassesBearerAuth(t *testing.T) {
 		w.WriteHeader(200)
 	}))
 
+	// These exact paths should bypass Bearer auth.
 	for _, path := range []string{"/admin", "/admin/login", "/admin/callback"} {
 		called = false
 		req := httptest.NewRequest("GET", path, nil) // No Bearer token
@@ -364,6 +365,18 @@ func TestAdminAuth_BypassesBearerAuth(t *testing.T) {
 
 		if w.Code != 200 || !called {
 			t.Errorf("%s: status=%d called=%v, want 200/true", path, w.Code, called)
+		}
+	}
+
+	// Unknown /admin/* paths should NOT bypass Bearer auth.
+	for _, path := range []string{"/admin/unknown", "/admin/api/secrets"} {
+		called = false
+		req := httptest.NewRequest("GET", path, nil) // No Bearer token
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		if w.Code != 401 {
+			t.Errorf("%s: status=%d, want 401 (should require auth)", path, w.Code)
 		}
 	}
 }
