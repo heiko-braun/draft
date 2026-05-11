@@ -140,15 +140,18 @@ func accessLevelString(l AccessLevel) string {
 }
 
 func (am *AuthMiddleware) verifyToken(token string) (*AuthContext, error) {
+	// Use a hash as cache key to avoid storing raw tokens in memory.
+	tokenKey := hashToken(token)
+
 	// Check cache.
-	if entry, ok := am.tokenCache.Load(token); ok {
+	if entry, ok := am.tokenCache.Load(tokenKey); ok {
 		cached := entry.(*tokenCacheEntry)
 		if time.Now().Before(cached.expiresAt) {
 			am.logger.Debug("auth: token cache hit", "user", cached.user.GitHubLogin)
 			return cached.user, nil
 		}
 		am.logger.Debug("auth: token cache expired")
-		am.tokenCache.Delete(token)
+		am.tokenCache.Delete(tokenKey)
 	}
 
 	am.logger.Debug("auth: calling GitHub /user API")
@@ -190,7 +193,7 @@ func (am *AuthMiddleware) verifyToken(token string) (*AuthContext, error) {
 		ParticipantID: participantID(email),
 	}
 
-	am.tokenCache.Store(token, &tokenCacheEntry{
+	am.tokenCache.Store(tokenKey, &tokenCacheEntry{
 		user:      user,
 		expiresAt: time.Now().Add(am.cacheTTL),
 	})
@@ -199,7 +202,7 @@ func (am *AuthMiddleware) verifyToken(token string) (*AuthContext, error) {
 }
 
 func (am *AuthMiddleware) checkRepoAccess(token, owner, repo string) (AccessLevel, error) {
-	cacheKey := token + ":" + owner + "/" + repo
+	cacheKey := hashToken(token) + ":" + owner + "/" + repo
 
 	if entry, ok := am.repoAccessCache.Load(cacheKey); ok {
 		cached := entry.(*RepoAccess)
@@ -267,6 +270,13 @@ func extractBearerToken(r *http.Request) string {
 func participantID(email string) string {
 	h := sha256.Sum256([]byte(strings.ToLower(email)))
 	return fmt.Sprintf("%x", h[:6])
+}
+
+// hashToken returns a SHA-256 hex digest of the token for use as a cache key,
+// so raw tokens are not held in memory longer than necessary.
+func hashToken(token string) string {
+	h := sha256.Sum256([]byte(token))
+	return fmt.Sprintf("%x", h)
 }
 
 func writeErrorJSON(w http.ResponseWriter, status int, msg string) {
