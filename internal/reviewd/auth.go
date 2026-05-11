@@ -67,8 +67,8 @@ func (am *AuthMiddleware) SetGitHubAPIBase(base string) {
 // Middleware returns an HTTP middleware that verifies the Bearer token.
 func (am *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Skip auth for health endpoints.
-		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+		// Skip auth for health and admin endpoints (admin uses its own session auth).
+		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" || strings.HasPrefix(r.URL.Path, "/admin") {
 			next.ServeHTTP(w, r)
 			return
 		}
