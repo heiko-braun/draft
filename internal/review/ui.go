@@ -562,9 +562,8 @@ let currentThread = null;
 let documents = [];
 let selectionAnchor = null;
 
-// Show API errors as toasts instead of console errors.
+// Show API errors as toasts in addition to console errors.
 window.addEventListener('unhandledrejection', (e) => {
-  e.preventDefault();
   const msg = e.reason && e.reason.message ? e.reason.message : String(e.reason);
   // Try to extract a readable message from JSON error responses.
   let display = msg;
