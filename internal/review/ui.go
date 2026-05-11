@@ -104,6 +104,27 @@ body {
   padding: 2rem 3rem;
   position: relative;
 }
+.center .doc-path-header {
+  max-width: 900px;
+  margin: 0 auto 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.doc-path-copy {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.doc-path-copy:hover { color: var(--text); border-color: var(--text-muted); }
 .center .doc-content {
   max-width: 900px;
   margin: 0 auto;
@@ -548,7 +569,9 @@ function renderDocContent() {
     center.innerHTML = '<div class="empty-state">Select a document to begin reviewing</div>';
     return;
   }
-  center.innerHTML = '<div class="doc-content" id="doc-content-wrapper">' + currentDoc.html + '</div>';
+  center.innerHTML = '<div class="doc-path-header"><span>' + escHtml(currentDoc.path) + '</span>' +
+    '<button class="doc-path-copy" onclick="copyDocPath()" title="Copy path">&#x2398;</button></div>' +
+    '<div class="doc-content" id="doc-content-wrapper">' + currentDoc.html + '</div>';
   applyHighlights();
   setupTextSelection();
 }
@@ -821,6 +844,15 @@ function formatTime(ts) {
   if (!ts) return '';
   const d = new Date(ts);
   return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function copyDocPath() {
+  if (!currentDoc) return;
+  navigator.clipboard.writeText(currentDoc.path).then(() => {
+    const btn = document.querySelector('.doc-path-copy');
+    btn.textContent = '\u2713';
+    setTimeout(() => { btn.innerHTML = '&#x2398;'; }, 1500);
+  });
 }
 
 function escHtml(s) {

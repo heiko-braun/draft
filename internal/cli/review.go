@@ -17,6 +17,7 @@ func newReviewCmd() *cobra.Command {
 	var (
 		port       int
 		branch     string
+		server     string
 		statusFlag bool
 		debugFlag  bool
 	)
@@ -28,28 +29,30 @@ func newReviewCmd() *cobra.Command {
 annotations, threaded discussions, and remote storage via the reviewd service.
 
 The review data is stored on a remote reviewd server (default: http://localhost:5100).
-Set REVIEWD_URL to point to a different server.
+Use --server or REVIEWD_URL to point to a different server.
 
 Examples:
   draft review
+  draft review --server https://reviews.example.com
   draft review --branch feature/x
   draft review specs/auth.md
   draft review --status`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runReview(port, branch, statusFlag, debugFlag, args)
+			return runReview(port, branch, server, statusFlag, debugFlag, args)
 		},
 	}
 
 	cmd.Flags().IntVarP(&port, "port", "p", 8787, "Port for the local review server")
 	cmd.Flags().StringVarP(&branch, "branch", "b", "", "Source branch for documents (overrides config)")
+	cmd.Flags().StringVarP(&server, "server", "s", "", "URL of the reviewd service (default: REVIEWD_URL or http://localhost:5100)")
 	cmd.Flags().BoolVar(&statusFlag, "status", false, "Print review status and exit")
 	cmd.Flags().BoolVar(&debugFlag, "debug", false, "Enable debug logging for the review server")
 
 	return cmd
 }
 
-func runReview(port int, branchOverride string, statusOnly, debug bool, args []string) error {
+func runReview(port int, branchOverride, serverURL string, statusOnly, debug bool, args []string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("getting working directory: %w", err)
@@ -75,7 +78,10 @@ func runReview(port int, branchOverride string, statusOnly, debug bool, args []s
 	token := githubToken()
 
 	// 4. Create remote client.
-	reviewdURL := os.Getenv("REVIEWD_URL")
+	reviewdURL := serverURL
+	if reviewdURL == "" {
+		reviewdURL = os.Getenv("REVIEWD_URL")
+	}
 	if reviewdURL == "" {
 		reviewdURL = "http://localhost:5100"
 	}
