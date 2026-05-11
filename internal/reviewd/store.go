@@ -493,54 +493,37 @@ func (s *Store) ListAllParticipants() ([]AdminParticipant, error) {
 	return out, rows.Err()
 }
 
-// ListAllRepos returns all repos ordered by creation date.
-func (s *Store) ListAllRepos() ([]Repo, error) {
-	rows, err := s.db.Query(`SELECT id, github_owner, github_repo, created_at FROM repos ORDER BY created_at DESC`)
+// AdminRepo is a repo with comment count for admin display.
+type AdminRepo struct {
+	ID           string    `json:"id"`
+	GitHubOwner  string    `json:"github_owner"`
+	GitHubRepo   string    `json:"github_repo"`
+	CommentCount int       `json:"comment_count"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// ListAllRepos returns all repos with comment counts, ordered by creation date.
+func (s *Store) ListAllRepos() ([]AdminRepo, error) {
+	rows, err := s.db.Query(`
+		SELECT r.id, r.github_owner, r.github_repo, COUNT(c.id), r.created_at
+		FROM repos r
+		LEFT JOIN threads t ON t.repo_id = r.id
+		LEFT JOIN comments c ON c.thread_id = t.id
+		GROUP BY r.id
+		ORDER BY r.created_at DESC
+	`)
 	if err != nil {
 		return nil, fmt.Errorf("list repos: %w", err)
 	}
 	defer rows.Close()
 
-	var out []Repo
+	var out []AdminRepo
 	for rows.Next() {
-		var r Repo
-		if err := rows.Scan(&r.ID, &r.GitHubOwner, &r.GitHubRepo, &r.CreatedAt); err != nil {
+		var r AdminRepo
+		if err := rows.Scan(&r.ID, &r.GitHubOwner, &r.GitHubRepo, &r.CommentCount, &r.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan repo: %w", err)
 		}
 		out = append(out, r)
-	}
-	return out, rows.Err()
-}
-
-// AdminComment is a comment with author name resolved for admin display.
-type AdminComment struct {
-	ID        string    `json:"id"`
-	Author    string    `json:"author"`
-	Body      string    `json:"body"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
-// ListRecentComments returns the most recent comments with author names.
-func (s *Store) ListRecentComments(limit int) ([]AdminComment, error) {
-	rows, err := s.db.Query(`
-		SELECT c.id, COALESCE(p.name, c.author), c.body, c.created_at
-		FROM comments c
-		LEFT JOIN participants p ON p.id = c.author
-		ORDER BY c.created_at DESC
-		LIMIT $1
-	`, limit)
-	if err != nil {
-		return nil, fmt.Errorf("list recent comments: %w", err)
-	}
-	defer rows.Close()
-
-	var out []AdminComment
-	for rows.Next() {
-		var c AdminComment
-		if err := rows.Scan(&c.ID, &c.Author, &c.Body, &c.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan comment: %w", err)
-		}
-		out = append(out, c)
 	}
 	return out, rows.Err()
 }
