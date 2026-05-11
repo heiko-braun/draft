@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Config holds all server configuration, read from environment variables.
@@ -22,6 +23,9 @@ type Config struct {
 
 	// GitHubClientSecret for OAuth (unused until auth middleware is wired).
 	GitHubClientSecret string
+
+	// AdminEmails is the list of emails allowed to access the admin UI.
+	AdminEmails []string
 }
 
 // LoadConfig reads configuration from environment variables with sensible defaults.
@@ -44,6 +48,14 @@ func LoadConfig() (Config, error) {
 
 	if c.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
+	}
+
+	if emails := os.Getenv("ADMIN_EMAILS"); emails != "" {
+		for _, e := range strings.Split(emails, ",") {
+			if trimmed := strings.TrimSpace(e); trimmed != "" {
+				c.AdminEmails = append(c.AdminEmails, strings.ToLower(trimmed))
+			}
+		}
 	}
 
 	return c, nil

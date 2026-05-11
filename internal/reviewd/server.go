@@ -60,6 +60,10 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
 
+	// Admin UI (requires authenticated admin email).
+	admin := AdminOnly(s.config.AdminEmails)
+	s.mux.HandleFunc("GET /admin", admin(s.handleAdmin))
+
 	read := s.auth.RequireRepoAccess(AccessRead)
 	write := s.auth.RequireRepoAccess(AccessWrite)
 

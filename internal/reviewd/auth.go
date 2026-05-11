@@ -279,6 +279,24 @@ func hashToken(token string) string {
 	return fmt.Sprintf("%x", h)
 }
 
+// AdminOnly returns a middleware that restricts access to configured admin emails.
+func AdminOnly(adminEmails []string) func(http.HandlerFunc) http.HandlerFunc {
+	allowed := make(map[string]bool, len(adminEmails))
+	for _, e := range adminEmails {
+		allowed[strings.ToLower(e)] = true
+	}
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			user := UserFromContext(r.Context())
+			if user == nil || !allowed[strings.ToLower(user.Email)] {
+				writeErrorJSON(w, http.StatusForbidden, "admin access required")
+				return
+			}
+			next(w, r)
+		}
+	}
+}
+
 func writeErrorJSON(w http.ResponseWriter, status int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

@@ -444,6 +444,28 @@ func (s *Store) RemoveReviewer(reviewID, participantID string) error {
 	return err
 }
 
+// AdminStats holds aggregate counts for the admin dashboard.
+type AdminStats struct {
+	Participants int `json:"participants"`
+	Repos        int `json:"repos"`
+	Comments     int `json:"comments"`
+}
+
+// GetAdminStats returns aggregate counts across all tables.
+func (s *Store) GetAdminStats() (*AdminStats, error) {
+	stats := &AdminStats{}
+	err := s.db.QueryRow(`
+		SELECT
+			(SELECT COUNT(*) FROM participants),
+			(SELECT COUNT(*) FROM repos),
+			(SELECT COUNT(*) FROM comments)
+	`).Scan(&stats.Participants, &stats.Repos, &stats.Comments)
+	if err != nil {
+		return nil, fmt.Errorf("admin stats: %w", err)
+	}
+	return stats, nil
+}
+
 func statusOrDefault(s string) string {
 	if s == "" {
 		return "open"
