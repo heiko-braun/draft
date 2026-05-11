@@ -63,24 +63,24 @@ func (s *Server) routes() {
 	read := s.auth.RequireRepoAccess(AccessRead)
 	write := s.auth.RequireRepoAccess(AccessWrite)
 
-	// Thread endpoints
+	// Thread endpoints — read access is sufficient to create/comment (review ≠ code push)
 	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads", read(s.handleListThreads))
 	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/threads/{threadID}", read(s.handleGetThread))
-	s.mux.HandleFunc("PUT /api/v1/repos/{owner}/{repo}/threads/{threadID}", write(s.handlePutThread))
+	s.mux.HandleFunc("PUT /api/v1/repos/{owner}/{repo}/threads/{threadID}", read(s.handlePutThread))
 	s.mux.HandleFunc("DELETE /api/v1/repos/{owner}/{repo}/threads/{threadID}", write(s.handleDeleteThread))
 
-	// Comment endpoints
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/threads/{threadID}/comments", write(s.handleAddComment))
+	// Comment endpoints — anyone who can read can comment
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/threads/{threadID}/comments", read(s.handleAddComment))
 
-	// Review endpoints
+	// Review endpoints — creating/commenting on reviews requires read, closing requires write
 	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews", read(s.handleListReviews))
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/reviews", write(s.handleCreateReview))
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/reviews", read(s.handleCreateReview))
 	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", read(s.handleGetReview))
 	s.mux.HandleFunc("PATCH /api/v1/repos/{owner}/{repo}/reviews/{reviewID}", write(s.handlePatchReview))
 
 	// Sync endpoints
 	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/sync", read(s.handleSync))
-	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/publish", write(s.handlePublish))
+	s.mux.HandleFunc("POST /api/v1/repos/{owner}/{repo}/publish", read(s.handlePublish))
 
 	// SSE events
 	s.mux.HandleFunc("GET /api/v1/repos/{owner}/{repo}/events", read(s.hub.HandleSSE(s.store)))
