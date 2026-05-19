@@ -252,6 +252,48 @@ body {
   opacity: 0.6;
 }
 
+/* Outdated threads section */
+.outdated-section {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 2px dashed var(--warning, #d97706);
+}
+.outdated-header {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--warning, #d97706);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.outdated-thread {
+  border-left: 3px solid var(--warning, #d97706);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: rgba(217, 119, 6, 0.04);
+  border-radius: 0 var(--radius, 6px) var(--radius, 6px) 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.outdated-thread:hover { background: rgba(217, 119, 6, 0.1); }
+.outdated-context {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.outdated-ctx-fade { color: var(--text-muted, #6b7280); opacity: 0.5; }
+.outdated-excerpt {
+  background: rgba(217, 119, 6, 0.15);
+  border-bottom: 2px solid var(--warning, #d97706);
+  border-radius: 2px;
+}
+.outdated-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted, #6b7280);
+  margin-top: 0.4rem;
+}
+
 /* Right panel */
 .panel {
   border-left: 1px solid var(--border);
@@ -550,9 +592,6 @@ body {
   <span class="repo" id="status-repo">--</span>
   <span id="status-branch">--</span>
   <span class="spacer"></span>
-  <span class="pending" id="status-pending"></span>
-  <button id="btn-sync" onclick="doSync()">Sync</button>
-  <button id="btn-publish" onclick="doPublish()">Publish</button>
 </div>
 <div class="toast-container" id="toast-container"></div>
 
@@ -666,6 +705,7 @@ function renderDocContent() {
     '<button class="doc-path-copy" onclick="copyDocPath()" title="Copy path">&#x2398;</button></div>' +
     '<div class="doc-content" id="doc-content-wrapper">' + currentDoc.html + '</div>';
   applyHighlights();
+  renderOutdatedThreads();
   setupTextSelection();
   renderMermaid();
 }
@@ -726,8 +766,9 @@ function applyHighlights() {
   const fileHashMatch = currentDoc.file_hash;
 
   // Sort threads by start offset descending so wrapping doesn't shift later offsets.
+  // Skip outdated threads — they render in a separate section.
   const sorted = [...currentDoc.threads]
-    .filter(t => t.anchor && t.anchor.excerpt)
+    .filter(t => t.anchor && t.anchor.excerpt && !t.outdated)
     .sort((a, b) => (b.anchor.start || 0) - (a.anchor.start || 0));
 
   sorted.forEach(t => {
@@ -768,6 +809,34 @@ function applyHighlights() {
   });
 }
 
+function renderOutdatedThreads() {
+  if (!currentDoc || !currentDoc.threads) return;
+  const outdated = currentDoc.threads.filter(t => t.outdated);
+  if (outdated.length === 0) return;
+  const wrapper = document.getElementById('doc-content-wrapper');
+  let html = '<div class="outdated-section"><div class="outdated-header">Outdated comments (' + outdated.length + ')</div>';
+  outdated.forEach(t => {
+    const commentCount = (t.comments || []).length;
+    html += '<div class="outdated-thread" data-thread-id="' + t.id + '">';
+    html += '<div class="outdated-context">';
+    if (t.anchor.context_before) html += '<span class="outdated-ctx-fade">' + escHtml(t.anchor.context_before) + '</span>';
+    html += '<mark class="outdated-excerpt">' + escHtml(t.anchor.excerpt) + '</mark>';
+    if (t.anchor.context_after) html += '<span class="outdated-ctx-fade">' + escHtml(t.anchor.context_after) + '</span>';
+    html += '</div>';
+    html += '<div class="outdated-meta">' + commentCount + ' comment' + (commentCount !== 1 ? 's' : '') +
+      ' &middot; ' + (t.status || 'open') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  wrapper.insertAdjacentHTML('beforeend', html);
+  wrapper.querySelectorAll('.outdated-thread').forEach(el => {
+    el.onclick = () => {
+      const t = outdated.find(th => th.id === el.dataset.threadId);
+      if (t) showThread(t);
+    };
+  });
+}
+
 function setupTextSelection() {
   const wrapper = document.getElementById('doc-content-wrapper');
   wrapper.addEventListener('mouseup', () => {
@@ -802,6 +871,11 @@ async function submitNewComment() {
   const input = document.getElementById('modal-comment-input');
   const body = input.value.trim();
   if (!body || !selectionAnchor || !currentDoc) return;
+  // Capture surrounding context for outdated-comment display.
+  const fullText = document.getElementById('doc-content-wrapper').textContent;
+  const ctxRadius = 300;
+  const ctxBefore = fullText.substring(Math.max(0, selectionAnchor.start - ctxRadius), selectionAnchor.start);
+  const ctxAfter = fullText.substring(selectionAnchor.end, Math.min(fullText.length, selectionAnchor.end + ctxRadius));
   const req = {
     review_id: '',
     document: currentDoc.path,
@@ -809,7 +883,9 @@ async function submitNewComment() {
       file_hash: currentDoc.file_hash || '',
       start: selectionAnchor.start,
       end: selectionAnchor.end,
-      excerpt: selectionAnchor.excerpt
+      excerpt: selectionAnchor.excerpt,
+      context_before: ctxBefore,
+      context_after: ctxAfter
     },
     body: body,
     author: ''
@@ -911,54 +987,10 @@ function showToast(msg, type) {
   setTimeout(() => { el.remove(); }, 3000);
 }
 
-async function doSync() {
-  const btn = document.getElementById('btn-sync');
-  btn.disabled = true;
-  btn.textContent = 'Syncing...';
-  try {
-    await api('/api/sync', { method: 'POST' });
-    showToast('Sync complete', 'success');
-    await loadDocuments();
-    await loadStatus();
-    if (currentDoc) await selectDoc(currentDoc.path);
-  } catch (e) {
-    showToast('Sync failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Sync';
-  }
-}
-
-async function doPublish() {
-  const btn = document.getElementById('btn-publish');
-  btn.disabled = true;
-  btn.textContent = 'Publishing...';
-  try {
-    const res = await api('/api/publish', { method: 'POST' });
-    if (res.error) {
-      showToast('Publish failed: ' + res.error, 'error');
-    } else {
-      showToast('Published successfully', 'success');
-    }
-    await loadStatus();
-  } catch (e) {
-    showToast('Publish failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Publish';
-  }
-}
-
 async function loadStatus() {
   const s = await api('/api/status');
   document.getElementById('status-repo').textContent = s.repo_name || '--';
   document.getElementById('status-branch').textContent = s.branch || '--';
-  const pending = document.getElementById('status-pending');
-  if (s.pending_changes) {
-    pending.textContent = 'Pending changes';
-  } else {
-    pending.textContent = '';
-  }
 }
 
 function formatTime(ts) {

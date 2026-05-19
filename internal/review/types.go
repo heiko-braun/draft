@@ -92,6 +92,14 @@ type Anchor struct {
 	// Excerpt is the selected text. Used for display and as a fallback
 	// to re-locate the annotation when the file has changed.
 	Excerpt string `json:"excerpt"`
+
+	// ContextBefore is ~300 chars of rendered text preceding the selection,
+	// captured at creation time for display when the anchor becomes outdated.
+	ContextBefore string `json:"context_before,omitempty"`
+
+	// ContextAfter is ~300 chars of rendered text following the selection,
+	// captured at creation time for display when the anchor becomes outdated.
+	ContextAfter string `json:"context_after,omitempty"`
 }
 
 // ThreadStatus represents the resolution status of a review thread.
@@ -148,6 +156,10 @@ type Thread struct {
 
 	// UpdatedAt is the RFC 3339 timestamp when the thread was last modified.
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// Outdated is a computed field (not persisted) indicating the anchor
+	// can no longer be resolved in the current document content.
+	Outdated bool `json:"outdated,omitempty"`
 }
 
 // Comment is a single entry in a thread's discussion.

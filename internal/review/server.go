@@ -22,7 +22,6 @@ import (
 // Server serves the review UI and JSON API.
 type Server struct {
 	store        ReviewStore
-	syncer       ReviewSyncer
 	docIndex     *DocIndex
 	config       ReviewConfig
 	docsRoot     string
@@ -35,10 +34,9 @@ type Server struct {
 	logger       *log.Logger
 }
 
-// NewServer creates a Server wired to the given store, syncer, and document index.
+// NewServer creates a Server wired to the given store and document index.
 func NewServer(
 	store ReviewStore,
-	syncer ReviewSyncer,
 	docIndex *DocIndex,
 	config ReviewConfig,
 	docsRoot, repoRoot, sourceBranch, repoName, userEmail string,
@@ -46,7 +44,6 @@ func NewServer(
 ) *Server {
 	s := &Server{
 		store:        store,
-		syncer:       syncer,
 		docIndex:     docIndex,
 		config:       config,
 		docsRoot:     docsRoot,
@@ -92,8 +89,6 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/api/reviews", s.handleReviews)
 	s.mux.HandleFunc("/api/threads", s.handleThreads)
 	s.mux.HandleFunc("/api/threads/", s.handleThreadAction)
-	s.mux.HandleFunc("/api/sync", s.handleSync)
-	s.mux.HandleFunc("/api/publish", s.handlePublish)
 	s.mux.HandleFunc("/api/status", s.handleStatus)
 }
 
@@ -179,6 +174,19 @@ func (s *Server) handleDocumentDetail(w http.ResponseWriter, r *http.Request) {
 	fileHash := fmt.Sprintf("%x", sha256.Sum256(content))
 
 	threads, _ := s.store.ListThreadsByDocument(docPath)
+
+	// Compute outdated status for each thread.
+	textContent := stripHTMLToText(htmlContent)
+	for i := range threads {
+		t := &threads[i]
+		if t.Anchor.FileHash == fileHash {
+			continue // hash matches, offsets are valid
+		}
+		if t.Anchor.Excerpt != "" && strings.Contains(textContent, t.Anchor.Excerpt) {
+			continue // excerpt still found via fallback
+		}
+		t.Outdated = true
+	}
 
 	detail := DocumentDetail{
 		Path:     docPath,
@@ -338,42 +346,6 @@ func (s *Server) handleThreadAction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	err := s.syncer.SyncAll()
-	if err != nil {
-		writeJSONResponse(w, SyncResponse{OK: false, Error: err.Error()})
-		return
-	}
-
-	// Re-index documents after sync.
-	newIndex, indexErr := IndexDocuments(s.docsRoot, s.config.DocumentPaths)
-	if indexErr == nil {
-		s.docIndex = newIndex
-	}
-
-	writeJSONResponse(w, SyncResponse{OK: true, Message: "sync complete"})
-}
-
-func (s *Server) handlePublish(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	err := s.syncer.Publish()
-	if err != nil {
-		writeJSONResponse(w, PublishResponse{OK: false, Error: err.Error()})
-		return
-	}
-
-	writeJSONResponse(w, PublishResponse{OK: true, Message: "published successfully"})
-}
-
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -382,7 +354,6 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	openReviews, _ := s.store.ListOpenReviews()
 	allThreads, _ := s.store.ListAllThreads()
-	pending, _ := s.syncer.HasPendingChanges()
 
 	openThreads := 0
 	for _, t := range allThreads {
@@ -392,12 +363,11 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSONResponse(w, StatusResponse{
-		RepoName:       s.repoName,
-		Branch:         s.sourceBranch,
-		PendingChanges: pending,
-		OpenReviews:    len(openReviews),
-		OpenThreads:    openThreads,
-		TotalThreads:   len(allThreads),
+		RepoName:     s.repoName,
+		Branch:       s.sourceBranch,
+		OpenReviews:  len(openReviews),
+		OpenThreads:  openThreads,
+		TotalThreads: len(allThreads),
 	})
 }
 
@@ -412,6 +382,16 @@ func writeJSONResponse(w http.ResponseWriter, v interface{}) {
 
 func httpError(w http.ResponseWriter, msg string, err error) {
 	http.Error(w, fmt.Sprintf("%s: %v", msg, err), http.StatusInternalServerError)
+}
+
+// stripHTMLToText removes HTML tags and returns the text content,
+// approximating the browser's element.textContent for anchor matching.
+func stripHTMLToText(html string) string {
+	// Remove all HTML tags.
+	stripped := regexp.MustCompile(`<[^>]*>`).ReplaceAllString(html, "")
+	// Collapse whitespace runs the way textContent does.
+	stripped = strings.Join(strings.Fields(stripped), " ")
+	return stripped
 }
 
 // renderReviewMarkdown renders markdown to HTML using goldmark, adding

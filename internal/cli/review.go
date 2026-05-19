@@ -96,7 +96,7 @@ func runReview(port int, branchOverride, serverURL string, statusOnly, debug boo
 
 	// 5. --status mode.
 	if statusOnly {
-		return printReviewStatus(client, client)
+		return printReviewStatus(client)
 	}
 
 	// 6. Index documents from local filesystem.
@@ -110,7 +110,7 @@ func runReview(port int, branchOverride, serverURL string, statusOnly, debug boo
 
 	// 8. Create local server backed by remote client.
 	srv := review.NewServer(
-		client, client, docIndex, cfg,
+		client, docIndex, cfg,
 		repo.Root, repo.Root,
 		sourceBranch, filepath.Base(repo.Root), userEmail,
 		debug,
@@ -136,7 +136,7 @@ func runReview(port int, branchOverride, serverURL string, statusOnly, debug boo
 	return nil
 }
 
-func printReviewStatus(store review.ReviewStore, syncer review.ReviewSyncer) error {
+func printReviewStatus(store review.ReviewStore) error {
 	openReviews, err := store.ListOpenReviews()
 	if err != nil {
 		return fmt.Errorf("listing open reviews: %w", err)
@@ -154,16 +154,9 @@ func printReviewStatus(store review.ReviewStore, syncer review.ReviewSyncer) err
 		}
 	}
 
-	pending, _ := syncer.HasPendingChanges()
-
 	fmt.Printf("Open reviews:    %d\n", len(openReviews))
 	fmt.Printf("Open threads:    %d\n", openThreads)
 	fmt.Printf("Total threads:   %d\n", len(allThreads))
-	if pending {
-		fmt.Printf("Pending changes: yes\n")
-	} else {
-		fmt.Printf("Pending changes: no\n")
-	}
 
 	return nil
 }

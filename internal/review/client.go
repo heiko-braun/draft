@@ -10,13 +10,10 @@ import (
 	"time"
 )
 
-// Compile-time interface checks.
-var (
-	_ ReviewStore  = (*Client)(nil)
-	_ ReviewSyncer = (*Client)(nil)
-)
+// Compile-time interface check.
+var _ ReviewStore = (*Client)(nil)
 
-// Client is an HTTP client that implements ReviewStore and ReviewSyncer
+// Client is an HTTP client that implements ReviewStore
 // by delegating to the reviewd API.
 type Client struct {
 	baseURL  string // e.g. "http://localhost:5100"
@@ -247,17 +244,6 @@ func (c *Client) CreateReview(title string, documents []string, sourceRef string
 	}
 	return &rev, nil
 }
-
-// --- ReviewSyncer implementation ---
-
-// SyncAll is a no-op — data lives on the server.
-func (c *Client) SyncAll() error { return nil }
-
-// Publish is a no-op — mutations are sent immediately.
-func (c *Client) Publish() error { return nil }
-
-// HasPendingChanges always returns false — no local queue.
-func (c *Client) HasPendingChanges() (bool, error) { return false, nil }
 
 // --- Helpers ---
 
