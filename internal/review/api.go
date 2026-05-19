@@ -17,13 +17,6 @@ type ReviewStore interface {
 	CreateReview(title string, documents []string, sourceRef string) (*Review, error)
 }
 
-// ReviewSyncer is the interface for sync operations.
-type ReviewSyncer interface {
-	SyncAll() error
-	Publish() error
-	HasPendingChanges() (bool, error)
-}
-
 // --- Request types ---
 
 // CreateReviewRequest is the JSON body for POST /api/reviews.
@@ -71,24 +64,9 @@ type DocumentDetail struct {
 
 // StatusResponse is returned by GET /api/status.
 type StatusResponse struct {
-	RepoName       string `json:"repo_name"`
-	Branch         string `json:"branch"`
-	PendingChanges bool   `json:"pending_changes"`
-	OpenReviews    int    `json:"open_reviews"`
-	OpenThreads    int    `json:"open_threads"`
-	TotalThreads   int    `json:"total_threads"`
-}
-
-// SyncResponse is returned by POST /api/sync.
-type SyncResponse struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
-}
-
-// PublishResponse is returned by POST /api/publish.
-type PublishResponse struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message,omitempty"`
-	Error   string `json:"error,omitempty"`
+	RepoName     string `json:"repo_name"`
+	Branch       string `json:"branch"`
+	OpenReviews  int    `json:"open_reviews"`
+	OpenThreads  int    `json:"open_threads"`
+	TotalThreads int    `json:"total_threads"`
 }
