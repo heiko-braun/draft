@@ -68,16 +68,6 @@ draft init --agent cursor   # Cursor only
 /refine authentication
 ```
 
-## Review & Discuss
-
-Review specs collaboratively with inline comments, threaded discussions, and approvals:
-
-```bash
-draft review
-```
-
-Opens a browser UI with rendered documents, inline text annotation, comment threads, and publish/sync workflow — all stored on a virtual git branch (`draft/reviews`) with no external dependencies.
-
 ## Contribute
 
 The workflows are defined in markdown files at `.claude/commands/` and `.cursor/skills/`. Test them, shape the details, share learnings.
@@ -242,28 +232,6 @@ The build process automatically syncs templates from `.claude/` and `.cursor/` (
 - **Edit templates in**: `.claude/commands/*.md`, `.cursor/skills/*/SKILL.md`, and `specs/TEMPLATE.md`
 - **Never edit**: `cmd/draft/templates/` (auto-generated build artifacts)
 - **Manual sync**: `make sync-templates` (automatic when running `make build` or `make install`)
-
-## Data Collection & Privacy
-
-The `draft review` command sends review data (repository name, document paths, comments, and your GitHub identity) to a remote reviewd service for collaborative review storage.
-
-**Default endpoint:** `https://reviewd-dev.up.railway.app`
-
-On first use, `draft review` will prompt for your consent before transmitting any data. Your decision is stored in `~/.config/draft/consent` and applies to all projects.
-
-To change your decision later, edit the consent file directly:
-
-```bash
-# Grant consent
-echo "review_data = true" > ~/.config/draft/consent
-
-# Revoke consent
-echo "review_data = false" > ~/.config/draft/consent
-```
-
-**No consent is required** when using a self-hosted reviewd instance via `--server` or the `REVIEWD_URL` environment variable.
-
-No telemetry, analytics, or usage tracking is collected by any other `draft` command.
 
 ## License
 
