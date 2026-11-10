@@ -1,7 +1,7 @@
 ---
 title: Spec Presentation
 description: Web UI to browse and review specs as styled HTML with table of contents from localhost
-status: proposed
+status: implemented
 author: Heiko braun <ike.braun@googlemail.com>
 ---
 
@@ -13,12 +13,12 @@ Add a `draft present` command that serves an index of all specs and individual s
 
 ## Acceptance Criteria
 
-- [ ] `draft present` command serves specs from localhost (no arguments needed)
-- [ ] Index page lists all specs in the `specs/` directory with links
-- [ ] Individual spec pages include an auto-generated table of contents from markdown headings
-- [ ] Markdown is rendered using goldmark with pleasant styling
-- [ ] Command opens the browser automatically to the index page
-- [ ] Server can be stopped with Ctrl+C
+- [x] `draft present` command serves specs from localhost (no arguments needed)
+- [x] Index page lists all specs in the `specs/` directory with links
+- [x] Individual spec pages include an auto-generated table of contents from markdown headings
+- [x] Markdown is rendered using goldmark with pleasant styling
+- [x] Command opens the browser automatically to the index page
+- [x] Server can be stopped with Ctrl+C
 
 ## Approach
 
